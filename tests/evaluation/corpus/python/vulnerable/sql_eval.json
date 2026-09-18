@@ -1,0 +1,8 @@
+[
+  {
+    "rule_id": "VIGIL-SEC-002",
+    "category": "security",
+    "severity": "Critical",
+    "title": "Use of unsafe eval()"
+  }
+]

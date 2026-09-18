@@ -1,0 +1,15 @@
+{
+  "name": "vigil",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vigil: Agentic AI Code Review and Security Assistant",
+  "scripts": {
+    "lint": "eslint .",
+    "audit:skills": "npx skill-audit scan ./skills tests/evaluation/corpus/"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.13.0",
+    "eslint": "9.13.0",
+    "skill-audit": "^1.0.0"
+  }
+}

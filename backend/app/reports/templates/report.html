@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vigil Security Review Report — {{ data.run_id }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      color: #1e293b;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 24px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    h1 { color: #0f172a; font-size: 24px; margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    h2 { color: #1e293b; font-size: 18px; margin-top: 28px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
+    h3 { color: #334155; font-size: 15px; margin-top: 16px; }
+    .meta { font-size: 13px; color: #64748b; margin-bottom: 24px; }
+    .summary-grid { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .summary-card {
+      flex: 1;
+      min-width: 120px;
+      background: #f1f5f9;
+      padding: 12px 16px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    .summary-count { font-size: 24px; font-weight: bold; }
+    .summary-label { font-size: 12px; color: #64748b; text-transform: uppercase; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .badge-critical { background: #fee2e2; color: #991b1b; }
+    .badge-high { background: #ffedd5; color: #9a3412; }
+    .badge-medium { background: #fef9c3; color: #854d0e; }
+    .badge-low { background: #dcfce7; color: #166534; }
+    .badge-info { background: #e0f2fe; color: #075985; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    th { background: #f8fafc; color: #475569; font-weight: 600; }
+    .code-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .finding-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background: #ffffff;
+    }
+    .finding-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .finding-title { font-weight: 600; font-size: 14px; }
+    .finding-meta { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+    .finding-body { font-size: 13px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Vigil Security & Quality Review</h1>
+    <div class="meta">
+      <strong>Run ID:</strong> {{ data.run_id }} &nbsp;|&nbsp;
+      <strong>Tenant:</strong> {{ data.tenant_id }} &nbsp;|&nbsp;
+      <strong>Language:</strong> {{ data.language }} &nbsp;|&nbsp;
+      <strong>Generated:</strong> {{ data.generated_at }}
+    </div>
+
+    <!-- Executive Summary -->
+    <section>
+      <h2>Executive Summary</h2>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-count">{{ data.total_findings }}</div>
+          <div class="summary-label">Total Findings</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-count" style="color: #991b1b;">{{ data.severity_counts.Critical }}</div>
+          <div class="summary-label">Critical</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-count" style="color: #9a3412;">{{ data.severity_counts.High }}</div>
+          <div class="summary-label">High</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-count" style="color: #854d0e;">{{ data.severity_counts.Medium }}</div>
+          <div class="summary-label">Medium</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-count" style="color: #166534;">{{ data.severity_counts.Low }}</div>
+          <div class="summary-label">Low</div>
+        </div>
+      </div>
+
+      <h3>Top Security Risks</h3>
+      {% if data.top_risks %}
+        <table>
+          <thead>
+            <tr>
+              <th>Severity</th>
+              <th>Rule</th>
+              <th>Finding</th>
+              <th>Confidence</th>
+              <th>Origin</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for risk in data.top_risks %}
+            <tr>
+              <td><span class="badge badge-{{ risk.severity.lower() }}">{{ risk.severity }}</span></td>
+              <td><code>{{ risk.rule_id or "N/A" }}</code></td>
+              <td><strong>{{ risk.title }}</strong></td>
+              <td>{{ "%.0f"|format(risk.confidence * 100) }}%</td>
+              <td>{{ risk.origin }}{% if risk.tool_name %} ({{ risk.tool_name }}){% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No critical or high severity risks identified.</p>
+      {% endif %}
+
+      {% if data.files_affected_summary %}
+      <h3>Files Affected ({{ data.affected_files|length }})</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>File Path</th>
+            <th>Findings Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for fpath, count in data.files_affected_summary.items() %}
+          <tr>
+            <td><code>{{ fpath }}</code></td>
+            <td><strong>{{ count }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </section>
+
+    <!-- Trends -->
+    <section>
+      <h2>Trends & Historical Drift</h2>
+      <p>
+        <strong>New Findings:</strong> {{ data.new_findings_count }} &nbsp;|&nbsp;
+        <strong>Resolved Findings:</strong> {{ data.resolved_findings_count }} &nbsp;|&nbsp;
+        <strong>Prior Runs Analyzed:</strong> {{ data.prior_runs_analyzed }}
+      </p>
+    </section>
+
+    <!-- Detailed Findings -->
+    <section>
+      <h2>Detailed Findings</h2>
+      {% for f in data.findings %}
+      <div class="finding-card">
+        <div class="finding-header">
+          <span class="finding-title">{{ f.title }}</span>
+          <span class="badge badge-{{ f.severity.lower() }}">{{ f.severity }}</span>
+        </div>
+        <div class="finding-meta">
+          {% if f.source_file_path %}
+          <strong>File:</strong> <code>{{ f.source_file_path }}</code> &nbsp;|&nbsp;
+          {% endif %}
+          <strong>Rule:</strong> <code>{{ f.rule_id or "N/A" }}</code> &nbsp;|&nbsp;
+          <strong>Category:</strong> {{ f.category }} &nbsp;|&nbsp;
+          <strong>Origin:</strong> {{ f.origin }}{% if f.tool_name %} ({{ f.tool_name }}){% endif %} &nbsp;|&nbsp;
+          <strong>Lines:</strong> {{ f.start_line or "?" }} - {{ f.end_line or "?" }}
+        </div>
+        <div class="finding-body">
+          <p><strong>Rationale:</strong> {{ f.rationale }}</p>
+          {% if f.code_excerpt %}
+          <div class="code-box">{{ f.code_excerpt }}</div>
+          {% endif %}
+          <p><strong>Remediation:</strong> {{ f.remediation }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    <!-- Remediation Plan -->
+    <section>
+      <h2>Remediation Plan</h2>
+      {% for cat, cat_findings in data.remediation_by_category.items() %}
+      <h3>Category: {{ cat|title }}</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Rule</th>
+            <th>Required Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in cat_findings %}
+          <tr>
+            <td><span class="badge badge-{{ item.severity.lower() }}">{{ item.severity }}</span></td>
+            <td><code>{{ item.rule_id or "N/A" }}</code></td>
+            <td>{{ item.remediation }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endfor %}
+    </section>
+
+    <!-- Appendix -->
+    <section>
+      <h2>Appendix</h2>
+      <table>
+        <tbody>
+          <tr><td><strong>Config Version</strong></td><td>{{ data.appendix.config_version }}</td></tr>
+          <tr><td><strong>Prompt Version</strong></td><td>{{ data.appendix.prompt_version }}</td></tr>
+          <tr><td><strong>Ruleset Version</strong></td><td>{{ data.appendix.ruleset_version }}</td></tr>
+          <tr><td><strong>Tool Versions</strong></td><td>
+            {% for tool, ver in data.appendix.tool_versions.items() %}
+              <code>{{ tool }}={{ ver }}</code>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</body>
+</html>

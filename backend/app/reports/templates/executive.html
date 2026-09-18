@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vigil Executive Summary — {{ data.run_id }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.4;
+      color: #0f172a;
+      margin: 0;
+      padding: 20px;
+      font-size: 12px;
+    }
+    .page { max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 20px; margin: 0 0 4px 0; color: #0f172a; }
+    h2 { font-size: 14px; margin: 16px 0 8px 0; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
+    .meta { font-size: 11px; color: #64748b; margin-bottom: 16px; }
+    .summary-grid { display: flex; gap: 8px; margin-bottom: 16px; }
+    .card { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px; text-align: center; }
+    .card-num { font-size: 18px; font-weight: bold; }
+    .card-label { font-size: 10px; color: #64748b; text-transform: uppercase; }
+    .badge { padding: 2px 6px; font-size: 10px; font-weight: bold; border-radius: 3px; }
+    .badge-critical { background: #fee2e2; color: #991b1b; }
+    .badge-high { background: #ffedd5; color: #9a3412; }
+    .badge-medium { background: #fef9c3; color: #854d0e; }
+    .badge-low { background: #dcfce7; color: #166534; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 11px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>Vigil Executive Security Summary</h1>
+    <div class="meta">
+      <strong>Run:</strong> {{ data.run_id }} &nbsp;|&nbsp;
+      <strong>Tenant:</strong> {{ data.tenant_id }} &nbsp;|&nbsp;
+      <strong>Language:</strong> {{ data.language }} &nbsp;|&nbsp;
+      <strong>Date:</strong> {{ data.generated_at[:10] }}
+    </div>
+
+    <div class="summary-grid">
+      <div class="card">
+        <div class="card-num">{{ data.total_findings }}</div>
+        <div class="card-label">Total Issues</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #991b1b;">{{ data.severity_counts.Critical }}</div>
+        <div class="card-label">Critical</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #9a3412;">{{ data.severity_counts.High }}</div>
+        <div class="card-label">High</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #854d0e;">{{ data.severity_counts.Medium }}</div>
+        <div class="card-label">Medium</div>
+      </div>
+      <div class="card">
+        <div class="card-num" style="color: #166534;">{{ data.severity_counts.Low }}</div>
+        <div class="card-label">Low</div>
+      </div>
+    </div>
+
+    <h2>Top 5 Immediate Risk Priorities</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Sev</th>
+          <th>Rule</th>
+          <th>Vulnerability / Quality Risk</th>
+          <th>Confidence</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for risk in data.top_risks %}
+        <tr>
+          <td><span class="badge badge-{{ risk.severity.lower() }}">{{ risk.severity }}</span></td>
+          <td><code>{{ risk.rule_id or "N/A" }}</code></td>
+          <td><strong>{{ risk.title }}</strong></td>
+          <td>{{ "%.0f"|format(risk.confidence * 100) }}%</td>
+          <td>{{ risk.origin }}{% if risk.tool_name %} ({{ risk.tool_name }}){% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5">No high-severity risks found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Remediation Actions by Category</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Top Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat, cat_findings in data.remediation_by_category.items() %}
+        <tr>
+          <td><strong>{{ cat|title }}</strong> ({{ cat_findings|length }})</td>
+          <td>{{ cat_findings[0].remediation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h2>Compliance & Audit Tracking</h2>
+    <p>
+      Analysis performed under strict zero-code-execution policy.
+      Config: <code>{{ data.appendix.config_version }}</code> &nbsp;|&nbsp;
+      Prompt: <code>{{ data.appendix.prompt_version }}</code> &nbsp;|&nbsp;
+      Ruleset: <code>{{ data.appendix.ruleset_version }}</code>
+    </p>
+  </div>
+</body>
+</html>
