@@ -92,6 +92,44 @@ pytest tests/unit/test_rule_engine.py::TestRuleEngineDetection::test_detects_uns
 
 ---
 
+## Sandbox Testing (Phase 4 / gVisor)
+
+Vigil patch validation tests (`tests/security/test_sandbox_isolation.py`) are strictly divided into two distinct categories:
+
+### Test Categories
+- **Category A (Configuration Assertions)**:
+  - Tests verify that GVisor configuration dictionaries contain strict isolation flags (`network_mode="none"`, `read_only=True`, `mem_limit=512m`, `pids_limit=256`, zero host secrets passed).
+  - Uses mocked Docker clients; runs on every operating system and host without runsc.
+- **Category B (Runtime Behavioral Isolation)**:
+  - Tests verify actual runtime security boundaries by launching real containers via `docker.from_env()`.
+  - Executes adversarial commands inside the container: egress probes (`curl 8.8.8.8`), rootfs write attempts (`touch /usr/bin/test`), fork bombs (PIDs limit enforcement), memory allocation (OOM killing above 512MB), and `/proc/self/environ` secret scanning.
+  - Requires the `runsc` (gVisor) OCI runtime registered with Docker daemon.
+  - Each test has an enforced 30-second timeout and guarantees container cleanup in `finally` blocks.
+
+### Local Development vs CI
+- **Local Developer Environments**:
+  - If `runsc` is not installed on your host machine, Category B tests **skip gracefully** with a clear skip reason (`runsc runtime not available; install gVisor to run`). They do not fail.
+  - Developers wanting to run Category B locally can install `runsc` on Linux:
+    ```bash
+    curl -fsSL https://gvisor.dev/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/gvisor-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main" | sudo tee /etc/apt/sources.list.d/gvisor.list > /dev/null
+    sudo apt-get update && sudo apt-get install -y runsc
+    sudo runsc install
+    sudo systemctl restart docker
+    ```
+- **Continuous Integration (CI)**:
+  - CI **MUST** run Category B tests. CI runner installs gVisor and configures Docker.
+  - CI includes an explicit guard that fails the build if any test in `test_sandbox_isolation.py` is skipped:
+    ```bash
+    pytest tests/security/test_sandbox_isolation.py -v | tee out.txt
+    if grep -q "SKIPPED" out.txt; then
+      echo "::error::Sandbox isolation tests were skipped in CI"
+      exit 1
+    fi
+    ```
+
+---
+
 ## Environment Variables Reference
 
 | Variable | Default | Description |
@@ -187,3 +225,20 @@ curl -X DELETE http://localhost:8000/v1/reviews/$RUN_ID \
 - [ ] Enable Redis AUTH and TLS
 - [ ] Review source retention policy (`VIGIL_SOURCE_RETENTION_DAYS`)
 - [ ] Deploy legal hold policy for compliance requirements
+
+---
+
+## Emergency Operations & Kill Switches (IC10)
+
+### Specialist Agent Kill Switch
+To disable all specialist agents in an emergency:
+```bash
+redis-cli SET vigil:killswitch:multi_agent true
+```
+
+To re-enable:
+```bash
+redis-cli DEL vigil:killswitch:multi_agent
+```
+
+When active, `MultiAgentOrchestrator` strictly bypasses A10 (Risk Scoring), A11 (Dependency Risk), A12 (Dataflow Investigation), A13 (Test Generation), and A14 (Executive Summary), executing only the core Phase 1–4 pipeline (A1–A5 and optional A6/A7 patch validation).
