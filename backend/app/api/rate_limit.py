@@ -33,9 +33,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         settings = get_settings()
-        client = get_redis()
 
-        # Attempt to get tenant/user IDs from request state (set by auth middleware)
+        # Attempt to get tenant/user IDs from request state (set by AuthContextMiddleware)
         tenant_id = getattr(getattr(request, "state", None), "tenant_id", None)
         user_id = getattr(getattr(request, "state", None), "user_id", None)
 
@@ -47,6 +46,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         window_ms = 60_000  # 1 minute
 
         try:
+            client = get_redis()
             # Tenant-level rate limit (requests per minute)
             tenant_key = f"rl:tenant:{tenant_id}"
             is_ok = await _sliding_window_check(

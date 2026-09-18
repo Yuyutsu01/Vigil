@@ -140,6 +140,37 @@ async def capability_llm_quality(
     return state
 
 
+def _convert_llm_finding(f: RawLLMFinding, cap_severity: bool) -> DetectedFinding:
+    """
+    Convert a RawLLMFinding to a DetectedFinding.
+    If cap_severity is True (quality findings), Critical and High are capped to Medium.
+    """
+    from app.models.finding import FindingOrigin
+
+    sev = f.severity.value
+    if cap_severity and sev in {"Critical", "High"}:
+        sev = "Medium"
+    ast_path = f.ast_path or f"line_{f.start_line or 0}/llm_reasoning"
+    matched_text = f.matched_text or f.title
+    return DetectedFinding(
+        rule_id=f.rule_id,
+        category=f.category,
+        severity=sev,
+        confidence=f.confidence,
+        title=f.title,
+        rationale=f.rationale,
+        remediation=f.remediation,
+        evidence_kind=EvidenceKind.llm_reasoning,
+        ast_path=ast_path,
+        matched_text=matched_text[:200],
+        start_line=f.start_line,
+        start_col=f.start_col,
+        end_line=f.end_line,
+        end_col=f.end_col,
+        origin=FindingOrigin.agent,
+    )
+
+
 # ─── Capability: Triage (DETERMINISTIC — NO LLM) ─────────────────────────────
 
 async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
@@ -149,43 +180,23 @@ async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
 
     Algorithm:
     1. Convert LLM findings to DetectedFinding format with capped severity.
+       Iterate security and quality findings separately to avoid object comparison issues.
     2. Merge rule findings + LLM findings.
     3. Deduplicate by fingerprint (deterministic rule findings take precedence).
     4. Sort by severity (Critical first) then confidence (descending).
     """
     from app.rules.engine import compute_fingerprint
-    from app.models.finding import EvidenceKind as EK, FindingOrigin, Severity as S
 
     # 1. Convert and cap LLM findings
     llm_converted: List[DetectedFinding] = []
-    for f in state.llm_security_findings + state.llm_quality_findings:
-        # LLM findings from quality review are capped at Medium
-        capped_severity = f.severity.value
-        if f in state.llm_quality_findings:
-            if capped_severity in {"Critical", "High"}:
-                capped_severity = "Medium"
 
-        ast_path = f.ast_path or f"line_{f.start_line or 0}/llm_reasoning"
-        matched_text = f.matched_text or f.title
+    # Security findings: severity unchanged
+    for f in state.llm_security_findings:
+        llm_converted.append(_convert_llm_finding(f, cap_severity=False))
 
-        df = DetectedFinding(
-            rule_id=f.rule_id,
-            category=f.category,
-            severity=capped_severity,
-            confidence=f.confidence,
-            title=f.title,
-            rationale=f.rationale,
-            remediation=f.remediation,
-            evidence_kind=EK.llm_reasoning,
-            ast_path=ast_path,
-            matched_text=matched_text[:200],
-            start_line=f.start_line,
-            start_col=f.start_col,
-            end_line=f.end_line,
-            end_col=f.end_col,
-            origin=FindingOrigin.agent,
-        )
-        llm_converted.append(df)
+    # Quality findings: Critical/High capped to Medium
+    for f in state.llm_quality_findings:
+        llm_converted.append(_convert_llm_finding(f, cap_severity=True))
 
     # 2. Compute fingerprints for all findings
     def _fp(f: DetectedFinding) -> str:

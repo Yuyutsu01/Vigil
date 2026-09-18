@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api.v1 import v1_router
+from app.api.auth_context_middleware import AuthContextMiddleware
 from app.api.rate_limit import RateLimitMiddleware
 from app.api.idempotency import IdempotencyMiddleware
 from app.config import get_settings
@@ -46,7 +47,19 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
-# ── CORS ──────────────────────────────────────────────────────────────────────
+# ── Middleware Registration ───────────────────────────────────────────────────
+# Starlette wraps middleware in reverse registration order: app.user_middleware is
+# traversed in reverse when constructing the ASGI middleware stack.
+# Therefore, middleware registered LAST executes FIRST on the incoming request path.
+#
+# Request path order:
+#   1. AuthContextMiddleware (parses Bearer JWT, populates request.state.tenant_id/user_id)
+#   2. RateLimitMiddleware (enforces per-tenant and per-user sliding window via Redis)
+#   3. IdempotencyMiddleware (intercepts duplicate POST /v1/reviews for same tenant + source)
+#   4. CORSMiddleware (handles CORS headers / preflight requests)
+#   5. Endpoint dependencies & handlers (get_auth_context validates and enforces authorization)
+#
+# Response path order is the reverse of request path order.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -55,12 +68,9 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Tenant-Hint"],
     expose_headers=["X-Vigil-Idempotent", "Retry-After"],
 )
-
-# ── Idempotency (must be before rate limiting) ────────────────────────────────
 app.add_middleware(IdempotencyMiddleware)
-
-# ── Rate limiting ──────────────────────────────────────────────────────────────
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(AuthContextMiddleware)
 
 # ── Request ID / timing middleware ────────────────────────────────────────────
 @app.middleware("http")

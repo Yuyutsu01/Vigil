@@ -20,6 +20,43 @@ sys.path.insert(0, str(BACKEND_SRC))
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
+class MockPipeline:
+    def __init__(self, store):
+        self.store = store
+        self.ops = []
+
+    def zremrangebyscore(self, key, min_val, max_val):
+        return self
+
+    def zadd(self, key, mapping):
+        return self
+
+    def zcard(self, key):
+        return self
+
+    def expire(self, key, ttl):
+        return self
+
+    async def execute(self):
+        return [0, 1, 1, True]
+
+
+class MockRedis:
+    def __init__(self):
+        self.store = {}
+        self.kv = {}
+
+    def pipeline(self, transaction=True):
+        return MockPipeline(self.store)
+
+    async def get(self, key):
+        return self.kv.get(key)
+
+    async def setex(self, key, ttl, value):
+        self.kv[key] = value
+        return True
+
+
 @pytest.fixture(scope="module")
 def app():
     """Create a FastAPI app instance for testing."""
@@ -32,7 +69,11 @@ def app():
     os.environ.setdefault("VIGIL_LLM_PROVIDER", "mock")
     os.environ.setdefault("VIGIL_ENV", "test")
 
-    with patch("app.main.create_tables", new=AsyncMock()):
+    mock_redis = MockRedis()
+
+    with patch("app.main.create_tables", new=AsyncMock()), \
+         patch("app.api.rate_limit.get_redis", return_value=mock_redis), \
+         patch("app.api.idempotency.get_redis", return_value=mock_redis):
         from app.main import app as fastapi_app
         from app.api.deps import get_db
 
