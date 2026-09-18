@@ -191,3 +191,168 @@ export async function pollReview(
   }
   return getReview(token, runId);
 }
+
+// ── Phase 3 Repositories & Scoped Reviews ───────────────────────────────────
+
+export interface RepositoryPolicy {
+  policy_id?: string;
+  enabled_languages: string[];
+  ignored_paths: string[];
+  ignored_rules: string[];
+  max_files_per_review: number;
+  auto_review_on_push: boolean;
+  auto_review_on_pr: boolean;
+  review_fork_prs: boolean;
+  review_draft_prs: boolean;
+}
+
+export interface Repository {
+  repository_id: string;
+  tenant_id: string;
+  provider: string;
+  external_id: number;
+  full_name: string;
+  default_branch: string;
+  is_connected: boolean;
+  policy?: RepositoryPolicy | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CostPreviewResponse {
+  file_count: number;
+  total_bytes: number;
+  estimated_input_tokens: number;
+  estimated_output_tokens: number;
+  estimated_cost_usd: number;
+  cost_cap_usd: number;
+  exceeds_cap: boolean;
+}
+
+export interface RepositoryReviewResponse {
+  repository_review_id: string;
+  repository_id: string;
+  review_run_id: string;
+  ref_type: string;
+  ref_value: string;
+  scope_mode: string;
+  file_count: number;
+  status: string;
+  budget_paused_reason: string | null;
+  created_at: string;
+}
+
+export async function getConnectURL(token: string): Promise<{ install_url: string; state: string }> {
+  const res = await fetch(`${API_BASE}/v1/repositories/connect`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Failed to initiate connection: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function listRepositories(token: string): Promise<Repository[]> {
+  const res = await fetch(`${API_BASE}/v1/repositories`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Failed to fetch repositories: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function getRepository(token: string, repoId: string): Promise<Repository> {
+  const res = await fetch(`${API_BASE}/v1/repositories/${repoId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Failed to fetch repository: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function updateRepositoryPolicy(
+  token: string,
+  repoId: string,
+  policy: Partial<RepositoryPolicy>
+): Promise<RepositoryPolicy> {
+  const res = await fetch(`${API_BASE}/v1/repositories/${repoId}/policy`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(policy),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Failed to update policy: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function disconnectRepository(token: string, repoId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/v1/repositories/${repoId}/disconnect`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Failed to disconnect repository: ${res.status}`);
+  }
+}
+
+export async function previewCost(
+  token: string,
+  repoId: string,
+  params: {
+    ref_type?: string;
+    ref_value?: string;
+    scope_mode?: string;
+    directory_filter?: string;
+  }
+): Promise<CostPreviewResponse> {
+  const q = new URLSearchParams(params as any).toString();
+  const res = await fetch(`${API_BASE}/v1/repositories/${repoId}/cost-preview?${q}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Cost preview failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+export async function triggerRepoReview(
+  token: string,
+  repoId: string,
+  body: {
+    ref_type: string;
+    ref_value: string;
+    scope_mode: string;
+    directory_filter?: string;
+    specific_files?: string[];
+  }
+): Promise<RepositoryReviewResponse> {
+  const res = await fetch(`${API_BASE}/v1/repositories/${repoId}/reviews`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.detail?.message || `Trigger review failed: ${res.status}`);
+  }
+  return res.json();
+}

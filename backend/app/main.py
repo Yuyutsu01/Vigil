@@ -4,6 +4,7 @@ Registers all middleware, routers, and startup/shutdown hooks.
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 import logging
 import time
 
@@ -31,10 +32,74 @@ _root_logger = logging.getLogger()
 _root_logger.addFilter(RedactionFilter())
 
 logger = logging.getLogger(__name__)
+from arq import create_pool
+from arq.connections import RedisSettings
+
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Vigil v1.0.0 starting up (env=%s)", settings.environment)
+    if settings.environment in {"development", "test"}:
+        await create_tables()
+        logger.info("Database tables created/verified")
+
+    # Phase 4 Sandbox Security & Runtime Probes [H1, H5, H6, IC10]
+    app.state.sandbox_available = False
+    if settings.environment == "production":
+        if settings.sandbox_runtime_type != "gvisor":
+            raise RuntimeError("Production requires sandbox_runtime_type='gvisor'")
+        if settings.allow_unsafe_sandbox_fallback:
+            raise RuntimeError("Production forbids allow_unsafe_sandbox_fallback=True")
+        if not settings.sandbox_image_digest:
+            raise RuntimeError("Production requires VIGIL_SANDBOX_IMAGE_DIGEST to be pinned and non-empty")
+        from app.sandbox.gvisor import verify_runsc_available, verify_sandbox_image
+        verify_runsc_available(settings)
+        verify_sandbox_image(settings)
+        app.state.sandbox_available = True
+    elif settings.environment == "development":
+        app.state.sandbox_available = False
+        try:
+            from app.sandbox.gvisor import verify_runsc_available, verify_sandbox_image
+            verify_runsc_available(settings)
+            verify_sandbox_image(settings)
+            app.state.sandbox_available = True
+        except RuntimeError as e:
+            logger.warning(
+                "Sandbox runtime unavailable in development: %s. "
+                "Patch validation endpoints will return 503.",
+                e,
+            )
+    else:
+        # test environment: default False to prevent false-positive assumptions [R1, H1]
+        app.state.sandbox_available = False
+
+    # Singleton ARQ connection pool attached to app.state (H1)
+    try:
+        app.state.arq_pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+        logger.info("ARQ connection pool initialized on app.state")
+    except Exception as e:
+        logger.warning("Could not initialize ARQ pool in lifespan: %s", e)
+        app.state.arq_pool = None
+
+    yield
+
+    logger.info("Vigil shutting down")
+    if getattr(app.state, "arq_pool", None) is not None:
+        try:
+            if hasattr(app.state.arq_pool, "aclose"):
+                await app.state.arq_pool.aclose()
+            else:
+                await app.state.arq_pool.close()
+            logger.info("ARQ connection pool closed")
+        except Exception as e:
+            logger.warning("Error closing ARQ pool: %s", e)
+
 
 # ── FastAPI app ────────────────────────────────────────────────────────────────
 app = FastAPI(
+    lifespan=lifespan,
     title="Vigil — Agentic Code Review API",
     description=(
         "Phase 1 (M1) prototype of the Vigil agentic code review and security assistant. "
@@ -46,6 +111,7 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
+app.state.sandbox_available = True
 
 # ── Middleware Registration ───────────────────────────────────────────────────
 # Starlette wraps middleware in reverse registration order: app.user_middleware is
@@ -99,20 +165,6 @@ async def health() -> dict:
         "version": "1.0.0",
         "redis": "ok" if redis_ok else "degraded",
     }
-
-
-# ── Startup / shutdown ────────────────────────────────────────────────────────
-@app.on_event("startup")
-async def startup() -> None:
-    logger.info("Vigil v1.0.0 starting up (env=%s)", settings.environment)
-    if settings.environment in {"development", "test"}:
-        await create_tables()
-        logger.info("Database tables created/verified")
-
-
-@app.on_event("shutdown")
-async def shutdown() -> None:
-    logger.info("Vigil shutting down")
 
 
 # ── Global exception handler ──────────────────────────────────────────────────

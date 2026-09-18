@@ -120,17 +120,13 @@ class TestNoCodeExecution:
         noop = NoOpSandboxRuntime()
 
         with pytest.raises(NotImplementedError):
-            asyncio.get_event_loop().run_until_complete(
-                noop.create_or_reuse("image", "run_id")
-            )
+            asyncio.run(noop.create_or_reuse("image", "run_id"))
 
         with pytest.raises(NotImplementedError):
-            asyncio.get_event_loop().run_until_complete(noop.start("sandbox_id"))
+            asyncio.run(noop.start("sandbox_id"))
 
         with pytest.raises(NotImplementedError):
-            asyncio.get_event_loop().run_until_complete(
-                noop.execute("sandbox_id", ["ls"])
-            )
+            asyncio.run(noop.execute("sandbox_id", ["ls"]))
 
     def test_ast_parse_does_not_execute(self) -> None:
         """

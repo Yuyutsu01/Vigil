@@ -10,7 +10,7 @@ import asyncio
 import sys
 import uuid
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -61,7 +61,7 @@ class MockRedis:
 def app():
     """Create a FastAPI app instance for testing."""
     import os
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import AsyncMock, MagicMock, patch
 
     os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test_vigil.db")
     os.environ.setdefault("REDIS_URL", "redis://localhost:6379/15")
@@ -79,6 +79,7 @@ def app():
 
         async def mock_get_db():
             mock_session = AsyncMock()
+            mock_session.add = MagicMock()
             yield mock_session
 
         fastapi_app.dependency_overrides[get_db] = mock_get_db

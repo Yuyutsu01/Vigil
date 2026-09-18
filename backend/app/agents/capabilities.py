@@ -15,6 +15,7 @@ from app.agents.state import ReviewGraphState
 from app.models.finding import EvidenceKind
 from app.parser.syntax_validator import validate_syntax
 from app.rules.engine import DetectedFinding, RuleEngine
+from app.schemas.finding import RawFinding
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,34 @@ async def capability_run_rules(state: ReviewGraphState) -> ReviewGraphState:
         "Rules: run_id=%s findings=%d",
         state.run_id,
         len(findings),
+    )
+    return state
+
+
+# ─── Capability: Run Adapters (FR-101) ────────────────────────────────────────
+
+async def capability_run_adapters(state: ReviewGraphState) -> ReviewGraphState:
+    """
+    Run configured static analyzer adapters (Bandit, Semgrep, Ruff, ESLint, etc.).
+    Only runs if parse was successful.
+    Executes in parallel with asyncio.gather and per-adapter timeouts.
+    """
+    if not state.parse_successful:
+        logger.debug("Skipping adapters: parse not successful (run_id=%s)", state.run_id)
+        return state
+
+    from app.adapters.registry import AdapterRegistry
+    registry = AdapterRegistry()
+
+    findings, diagnostics = await registry.run_all(state.source_code, state.language)
+    state.tool_findings = findings
+    state.adapter_diagnostics = diagnostics
+
+    logger.debug(
+        "Adapters: run_id=%s findings=%d diagnostics=%d",
+        state.run_id,
+        len(findings),
+        len(diagnostics),
     )
     return state
 
@@ -160,7 +189,7 @@ def _convert_llm_finding(f: RawLLMFinding, cap_severity: bool) -> DetectedFindin
         title=f.title,
         rationale=f.rationale,
         remediation=f.remediation,
-        evidence_kind=EvidenceKind.llm_reasoning,
+        evidence_kind=f.evidence_kind or EvidenceKind.llm_reasoning,
         ast_path=ast_path,
         matched_text=matched_text[:200],
         start_line=f.start_line,
@@ -168,6 +197,47 @@ def _convert_llm_finding(f: RawLLMFinding, cap_severity: bool) -> DetectedFindin
         end_line=f.end_line,
         end_col=f.end_col,
         origin=FindingOrigin.agent,
+    )
+
+
+def _convert_tool_finding(f: RawFinding) -> DetectedFinding:
+    """Convert a tool RawFinding to a normalized DetectedFinding."""
+    from app.models.finding import FindingOrigin
+
+    # Determine category
+    rule_id_upper = (f.rule_id or "").upper()
+    if any(k in rule_id_upper for k in ["SEC", "B1", "B2", "B3", "CVE", "VULN", "INJECT", "EVAL"]):
+        category = "security"
+    else:
+        category = "quality"
+
+    raw_sev = (f.severity_raw or "Medium").capitalize()
+    if raw_sev not in {"Critical", "High", "Medium", "Low", "Info"}:
+        raw_sev = "Medium"
+
+    ast_path = f"tool_{f.tool_name}/{f.rule_id or 'finding'}"
+    matched_text = f.message[:200]
+    evidence_kind = EvidenceKind.ast_node if f.start_line is not None else EvidenceKind.token_regex
+
+    return DetectedFinding(
+        rule_id=f.rule_id or f"{f.tool_name.upper()}-001",
+        category=category,
+        severity=raw_sev,
+        confidence=0.85,
+        title=f.message[:255],
+        rationale=f.message,
+        remediation=f"Address finding reported by {f.tool_name}",
+        evidence_kind=evidence_kind,
+        ast_path=ast_path,
+        matched_text=matched_text,
+        start_line=f.start_line,
+        start_col=f.start_col,
+        end_line=f.end_line,
+        end_col=f.end_col,
+        origin=FindingOrigin.tool,
+        tool_name=f.tool_name,
+        tool_version=f.tool_version,
+        raw_evidence=f.raw_evidence,
     )
 
 
@@ -180,10 +250,10 @@ async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
 
     Algorithm:
     1. Convert LLM findings to DetectedFinding format with capped severity.
-       Iterate security and quality findings separately to avoid object comparison issues.
-    2. Merge rule findings + LLM findings.
-    3. Deduplicate by fingerprint (deterministic rule findings take precedence).
-    4. Sort by severity (Critical first) then confidence (descending).
+    2. Convert tool adapter findings to DetectedFinding format.
+    3. Merge three sources: rule findings + tool findings + LLM findings.
+    4. Deduplicate by fingerprint with strict precedence: rule > tool > agent.
+    5. Sort by severity (Critical first) then confidence (descending).
     """
     from app.rules.engine import compute_fingerprint
 
@@ -198,7 +268,13 @@ async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
     for f in state.llm_quality_findings:
         llm_converted.append(_convert_llm_finding(f, cap_severity=True))
 
-    # 2. Compute fingerprints for all findings
+    # 2. Convert tool findings
+    tool_converted: List[DetectedFinding] = [
+        f if isinstance(f, DetectedFinding) else _convert_tool_finding(f)
+        for f in state.tool_findings
+    ]
+
+    # 3. Compute fingerprints for all findings
     def _fp(f: DetectedFinding) -> str:
         return compute_fingerprint(
             f.rule_id or "unknown",
@@ -207,7 +283,7 @@ async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
             f.evidence_kind.value,
         )
 
-    # 3. Deduplicate: rule findings take precedence over LLM findings
+    # 4. Deduplicate: rule > tool > agent precedence
     seen: dict[str, DetectedFinding] = {}
 
     # Insert rule findings first (highest priority)
@@ -215,13 +291,19 @@ async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
         fp = _fp(f)
         seen[fp] = f
 
-    # Insert LLM findings, skip if fingerprint already exists (from rule)
+    # Insert tool findings next (rule > tool > agent)
+    for f in tool_converted:
+        fp = _fp(f)
+        if fp not in seen:
+            seen[fp] = f
+
+    # Insert LLM findings, skip if fingerprint already exists
     for f in llm_converted:
         fp = _fp(f)
         if fp not in seen:
             seen[fp] = f
 
-    # 4. Sort by severity (Critical=0), then confidence descending
+    # 5. Sort by severity (Critical=0), then confidence descending
     merged = list(seen.values())
     merged.sort(
         key=lambda f: (_SEVERITY_ORDER.get(f.severity, 99), -f.confidence)
@@ -229,10 +311,11 @@ async def capability_triage(state: ReviewGraphState) -> ReviewGraphState:
 
     state.final_findings = merged
     logger.debug(
-        "Triage: run_id=%s total_findings=%d (rule=%d, llm=%d, after_dedup=%d)",
+        "Triage: run_id=%s total_findings=%d (rule=%d, tool=%d, llm=%d, after_dedup=%d)",
         state.run_id,
         len(merged),
         len(state.rule_findings),
+        len(tool_converted),
         len(llm_converted),
         len(merged),
     )

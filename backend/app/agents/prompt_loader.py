@@ -68,3 +68,40 @@ def format_quality_prompt(source_code: str, language: str) -> Tuple[str, str]:
     filled = template.replace("{source_code}", source_code)
     filled = filled.replace("{language}", language)
     return filled, version
+
+
+def format_patch_prompt(
+    source_code: str,
+    language: str,
+    rule_id: str,
+    title: str,
+    severity: str,
+    category: str,
+    start_line: Optional[int],
+    end_line: Optional[int],
+    matched_text: str,
+    rationale: str,
+) -> Tuple[str, str]:
+    """Load and format the patch_generation prompt. Returns (filled_prompt, prompt_version)."""
+    template, version = load_prompt("patch_generation")
+    filled = (
+        template.replace("{source_code}", source_code)
+        .replace("{language}", language)
+        .replace("{rule_id}", rule_id or "UNKNOWN")
+        .replace("{title}", title or "")
+        .replace("{severity}", severity or "Medium")
+        .replace("{category}", category or "security")
+        .replace("{start_line}", str(start_line if start_line is not None else "?"))
+        .replace("{end_line}", str(end_line if end_line is not None else "?"))
+        .replace("{matched_text}", matched_text or "")
+        .replace("{rationale}", rationale or "")
+    )
+    return filled, version
+
+
+def format_pr_review_prompt(pr_diff: str, findings_json: str) -> Tuple[str, str]:
+    """Load and format the pr_review prompt. Returns (filled_prompt, prompt_version)."""
+    template, version = load_prompt("pr_review")
+    filled = template.replace("{pr_diff}", pr_diff).replace("{findings_json}", findings_json)
+    return filled, version
+

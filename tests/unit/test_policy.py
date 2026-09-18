@@ -91,9 +91,7 @@ class TestPolicyEnforcement:
             from app.schemas.finding import RawLLMResponse
             return RawLLMResponse(findings=[])
 
-        result = asyncio.get_event_loop().run_until_complete(
-            invoke_llm_with_policy(state, mock_llm)
-        )
+        result = asyncio.run(invoke_llm_with_policy(state, mock_llm))
         assert result is None, "Must return None when deadline exceeded"
         assert call_count[0] == 0, "LLM must not be called when policy blocks"
 

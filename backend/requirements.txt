@@ -23,3 +23,17 @@ tree-sitter==0.23.0
 tree-sitter-python==0.23.2
 tree-sitter-javascript==0.23.0
 tree-sitter-typescript==0.23.0
+# Phase 2 (M2) Static Analyzers, Reporting & Performance
+jinja2==3.1.6
+weasyprint==70.0
+bandit==1.9.4
+ruff==0.6.9
+locust==2.46.6
+# Phase 3 (M3) GitHub Integration & Background Queue
+arq==0.26.1
+pyjwt[crypto]==2.9.0
+cryptography==43.0.1
+# Phase 4 (M4) Patch Generation & Sandbox Validation
+docker==7.2.0
+packaging>=23.0
+

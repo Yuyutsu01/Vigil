@@ -41,6 +41,8 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
     autocommit=False,
 )
+# Alias for background workers and scripts
+async_session_factory = AsyncSessionLocal
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:

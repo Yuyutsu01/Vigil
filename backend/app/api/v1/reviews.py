@@ -89,6 +89,34 @@ async def create_review(
     idem_key = getattr(request.state, "idempotency_key", None)
     idem_client = getattr(request.state, "idempotency_client", None)
 
+    # 1. Load shedding check ([M2])
+    from app.config import get_settings
+    from app.redis_client import get_redis
+    from app.services.budget_service import assert_tenant_daily_budget, get_tenant_daily_limit
+
+    settings = get_settings()
+    redis = get_redis()
+    try:
+        llm_depth = await redis.llen("vigil:queue:llm")
+        if llm_depth > getattr(settings, "queue_shed_threshold_llm", 500):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={"code": "queue_saturated", "message": "Worker queue depth exceeded capacity. Retry after backoff."},
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.debug("Redis queue depth check bypassed: %s", e)
+
+    # 2. Daily cost budget check ([B5])
+    try:
+        daily_limit = await get_tenant_daily_limit(db, auth.tenant_id)
+        await assert_tenant_daily_budget(redis, auth.tenant_id, added_cost=0.01, limit=daily_limit, db=db)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.debug("Daily budget check bypassed: %s", e)
+
     try:
         run = await create_and_run_review(
             db=db,
@@ -159,6 +187,10 @@ async def get_review(
             run_id=f.run_id,
             fingerprint=f.fingerprint,
             origin=f.origin,
+            tool_name=f.tool_name,
+            tool_version=f.tool_version,
+            raw_evidence_ref=f.raw_evidence_ref,
+            source_file_path=f.source_file_path,
             rule_id=f.rule_id,
             category=f.category,
             severity=f.severity,
@@ -271,8 +303,27 @@ async def submit_feedback(
         useful=body.useful,
         disposition=body.disposition,
         comment=body.comment,
+        reason_category=body.reason_category,
     )
     db.add(feedback)
+    await db.flush()
+
+    # Index for feedback learning if disposition is provided (FR-109)
+    if body.disposition:
+        from app.redis_client import get_redis
+        from app.services.learning_service import index_finding_disposition
+        redis = get_redis()
+        try:
+            await index_finding_disposition(
+                db=db,
+                redis=redis,
+                finding=finding,
+                feedback=feedback,
+                user_id=auth.user_id,
+                tenant_id=auth.tenant_id,
+            )
+        except Exception as e:
+            logger.warning("Feedback learning indexing failed: %s", e)
 
     await record_audit_event(
         db,
@@ -281,7 +332,12 @@ async def submit_feedback(
         action=AuditAction.SUBMIT_FEEDBACK,
         target_type="Finding",
         target_id=str(finding_id),
-        metadata={"useful": body.useful, "disposition": body.disposition},
+        metadata={
+            "useful": body.useful,
+            "disposition": body.disposition,
+            "reason_category": body.reason_category,
+            "indexed_for_learning": feedback.indexed_for_learning,
+        },
     )
     await db.flush()
 
@@ -289,4 +345,207 @@ async def submit_feedback(
         feedback_id=feedback.feedback_id,
         finding_id=finding_id,
         disposition=body.disposition,
+        reason_category=feedback.reason_category,
+        indexed_for_learning=feedback.indexed_for_learning,
     )
+
+
+# ─── GET /v1/reviews/{run_id}/agent-tree (FR-108, AC-108.8) ───────────────────
+
+@router.get(
+    "/{run_id}/agent-tree",
+    summary="Get multi-agent orchestration execution tree and telemetry (FR-108, AC-108.8)",
+)
+async def get_agent_tree(
+    run_id: uuid.UUID,
+    auth: AuthContext = Depends(get_auth_context),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Returns full execution tree details, durations, token attributions,
+    and partial failure statuses for all specialist agents.
+    """
+    from sqlalchemy import select
+    from app.models.orchestration import AgentCoordinationRun, AgentTaskExecution
+
+    stmt = select(AgentCoordinationRun).where(
+        AgentCoordinationRun.review_run_id == run_id,
+        AgentCoordinationRun.tenant_id == auth.tenant_id,
+    )
+    res = await db.execute(stmt)
+    coord = res.scalar_one_or_none()
+    if not coord:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "agent_tree_not_found", "message": f"No agent coordination run for review {run_id}"},
+        )
+
+    task_stmt = (
+        select(AgentTaskExecution)
+        .where(AgentTaskExecution.coordination_id == coord.coordination_id)
+        .order_by(AgentTaskExecution.created_at.asc())
+    )
+    task_res = await db.execute(task_stmt)
+    tasks = task_res.scalars().all()
+
+    task_list = [
+        {
+            "task_id": str(t.task_id),
+            "agent_name": t.agent_name,
+            "status": t.status,
+            "duration_ms": t.duration_ms,
+            "tokens_consumed": t.tokens_consumed,
+            "error_message": t.error_message,
+        }
+        for t in tasks
+    ]
+    return {
+        "coordination_id": str(coord.coordination_id),
+        "review_run_id": str(coord.review_run_id),
+        "tenant_id": str(coord.tenant_id),
+        "status": coord.status,
+        "total_tokens_consumed": coord.total_tokens_consumed,
+        "total_wall_clock_ms": coord.total_wall_clock_ms,
+        "failed_agents": coord.failed_agents,
+        "tasks": task_list,
+        "agents": task_list,
+    }
+
+
+# ─── GET /v1/reviews/{run_id}/report (FR-102) ───────────────────────────────
+
+@router.get(
+    "/{run_id}/report",
+    summary="Export review report in JSON, HTML, or PDF format (FR-102)",
+)
+async def get_review_report(
+    run_id: uuid.UUID,
+    format: str = "json",
+    auth: AuthContext = Depends(get_auth_context),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Export security and quality review findings in JSON, HTML, or PDF format.
+    Includes executive summary, severity breakdown, trends, and remediation plan.
+    Code excerpts are redacted; full source code is never exposed.
+    """
+    from fastapi.responses import Response
+    from app.reports.base import build_report_data
+    from app.reports.json_report import JSONReportRenderer
+    from app.reports.html_report import HTMLReportRenderer
+    from app.reports.pdf_report import PDFReportRenderer
+
+    run = await get_review_run(db, run_id, auth.tenant_id)
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "run_not_found", "message": f"Review run {run_id} not found"},
+        )
+
+    report_data = build_report_data(run, run.findings)
+
+    fmt = format.lower()
+    if fmt == "json":
+        renderer = JSONReportRenderer()
+    elif fmt == "html":
+        renderer = HTMLReportRenderer(template_name="report.html")
+    elif fmt == "pdf":
+        renderer = PDFReportRenderer(template_name="report.html")
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "invalid_format", "message": f"Unsupported report format: {format}"},
+        )
+
+    content_bytes = renderer.render(report_data)
+    filename = f"vigil_report_{run_id}.{renderer.file_extension}"
+
+    return Response(
+        content=content_bytes,
+        media_type=renderer.media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ─── GET /v1/reviews/{run_id}/report/executive.pdf (FR-102) ──────────────────
+
+@router.get(
+    "/{run_id}/report/executive.pdf",
+    summary="Download one-page executive summary PDF report (FR-102)",
+)
+async def get_executive_pdf_report(
+    run_id: uuid.UUID,
+    auth: AuthContext = Depends(get_auth_context),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Generate and download a one-page executive summary PDF report.
+    Contains severity breakdown and risk priorities without code snippets.
+    """
+    from fastapi.responses import Response
+    from app.reports.base import build_report_data
+    from app.reports.pdf_report import PDFReportRenderer
+
+    run = await get_review_run(db, run_id, auth.tenant_id)
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "run_not_found", "message": f"Review run {run_id} not found"},
+        )
+
+    report_data = build_report_data(run, run.findings)
+    renderer = PDFReportRenderer(template_name="executive.html")
+    content_bytes = renderer.render(report_data)
+    filename = f"vigil_executive_{run_id}.pdf"
+
+    return Response(
+        content=content_bytes,
+        media_type=renderer.media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ─── GET /v1/reviews/{run_id}/tool-findings (FR-101) ────────────────────────
+
+@router.get(
+    "/{run_id}/tool-findings",
+    summary="Retrieve raw static analyzer tool findings (FR-101)",
+)
+async def get_review_tool_findings(
+    run_id: uuid.UUID,
+    auth: AuthContext = Depends(get_auth_context),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Retrieve verbatim raw static analyzer tool findings (Bandit, Semgrep, ESLint, Ruff).
+    Scoped strictly to authenticated tenant.
+    """
+    from app.services.review_service import get_tool_findings
+
+    run = await get_review_run(db, run_id, auth.tenant_id)
+    if not run:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "run_not_found", "message": f"Review run {run_id} not found"},
+        )
+
+    tool_findings = await get_tool_findings(db, run_id, auth.tenant_id)
+    return [
+        {
+            "tool_finding_id": str(tf.tool_finding_id),
+            "run_id": str(tf.run_id),
+            "tool_name": tf.tool_name,
+            "tool_version": tf.tool_version,
+            "rule_id": tf.rule_id,
+            "severity_raw": tf.severity_raw,
+            "message": tf.message,
+            "file_path": tf.file_path,
+            "start_line": tf.start_line,
+            "start_col": tf.start_col,
+            "end_line": tf.end_line,
+            "end_col": tf.end_col,
+            "raw_evidence": tf.raw_evidence,
+            "created_at": tf.created_at.isoformat() if tf.created_at else None,
+        }
+        for tf in tool_findings
+    ]

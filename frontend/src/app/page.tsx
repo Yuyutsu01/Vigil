@@ -4,13 +4,16 @@ import { useState, useCallback } from 'react';
 import LoginForm from '../components/LoginForm';
 import CodeEditor from '../components/CodeEditor';
 import FindingsPanel from '../components/FindingsPanel';
+import { RepositoriesList } from '../components/RepositoriesList';
 import { getToken, clearToken } from '../lib/token';
-import type { ReviewRun } from '../lib/api';
+import { getReview, type ReviewRun, type RepositoryReviewResponse } from '../lib/api';
 import styles from './page.module.css';
 
 type Toast = { msg: string; type: 'success' | 'error' | 'info'; id: number };
 
 let toastSeq = 0;
+
+type ActiveTab = 'editor' | 'repos';
 
 export default function Home() {
   const [token, setToken] = useState<string | null>(() => {
@@ -20,6 +23,7 @@ export default function Home() {
   });
   const [run, setRun] = useState<ReviewRun | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [activeTab, setActiveTab] = useState<ActiveTab>('editor');
 
   function showToast(msg: string, type: Toast['type'] = 'info') {
     const id = ++toastSeq;
@@ -52,6 +56,19 @@ export default function Home() {
     }
   }
 
+  async function handleRepoReviewTriggered(resp: RepositoryReviewResponse) {
+    showToast(`Repository review started (${resp.scope_mode})`, 'info');
+    if (token) {
+      try {
+        const runData = await getReview(token, resp.review_run_id);
+        setRun(runData);
+        setActiveTab('editor');
+      } catch (err: any) {
+        showToast(err.message || 'Failed to fetch review run', 'error');
+      }
+    }
+  }
+
   function handleError(msg: string) {
     showToast(msg, 'error');
   }
@@ -72,9 +89,41 @@ export default function Home() {
             <circle cx="18" cy="18" r="3" fill="#f59e0b" />
           </svg>
           <span className={styles.navTitle}>Vigil</span>
-          <span className={styles.navPhase}>Phase 1</span>
+          <span className={styles.navPhase}>Phase 3</span>
         </div>
         <div className={styles.navRight}>
+          <div style={{ display: 'flex', gap: 6, marginRight: 16 }}>
+            <button
+              onClick={() => setActiveTab('editor')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                background: activeTab === 'editor' ? '#f59e0b' : '#334155',
+                color: activeTab === 'editor' ? '#000' : '#fff',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              Single File Review
+            </button>
+            <button
+              onClick={() => setActiveTab('repos')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 6,
+                border: 'none',
+                background: activeTab === 'repos' ? '#f59e0b' : '#334155',
+                color: activeTab === 'repos' ? '#000' : '#fff',
+                fontWeight: 600,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              GitHub Repositories
+            </button>
+          </div>
           <span className={styles.navHint}>
             🔒 Code is never executed
           </span>
@@ -89,57 +138,27 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* ── Hero area ────────────────────────────────────────────────────── */}
-      <header className={styles.hero}>
-        <div className="container">
-          <h1>
-            Agentic{' '}
-            <span style={{
-              background: 'linear-gradient(135deg, #f59e0b, #8b5cf6)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              Security Review
-            </span>
-          </h1>
-          <p className={styles.heroSub}>
-            Paste Python, JavaScript, or TypeScript code. Vigil runs deterministic rule
-            analysis + AI reasoning to surface vulnerabilities and quality issues.
-            Results in seconds — code never executed.
-          </p>
-
-          {/* Stats bar */}
-          <div className={styles.statsBar} aria-label="Key statistics">
-            {[
-              { label: '7 Rule Categories', icon: '🛡' },
-              { label: 'AST-based Detection', icon: '🌳' },
-              { label: 'Zero Code Execution', icon: '🔒' },
-              { label: 'SARIF-compatible', icon: '📋' },
-            ].map(s => (
-              <div key={s.label} className={styles.statChip}>
-                <span aria-hidden="true">{s.icon}</span>
-                <span>{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </header>
-
       {/* ── Main content ─────────────────────────────────────────────────── */}
       <main className={styles.main} id="main-content">
         <div className="container">
-          <div className={styles.grid}>
-            {/* Left — editor */}
-            <div className={styles.editorCol}>
-              <h2 className={styles.sectionLabel}>
-                <span>1</span> Paste Source Code
-              </h2>
-              <CodeEditor
-                token={token}
-                onResult={handleResult}
-                onError={handleError}
-              />
-            </div>
+          {activeTab === 'repos' ? (
+            <RepositoriesList
+              token={token}
+              onReviewTriggered={handleRepoReviewTriggered}
+            />
+          ) : (
+            <div className={styles.grid}>
+              {/* Left — editor */}
+              <div className={styles.editorCol}>
+                <h2 className={styles.sectionLabel}>
+                  <span>1</span> Paste Source Code
+                </h2>
+                <CodeEditor
+                  token={token}
+                  onResult={handleResult}
+                  onError={handleError}
+                />
+              </div>
 
             {/* Right — results */}
             <div className={styles.resultsCol}>
@@ -168,6 +187,7 @@ export default function Home() {
               )}
             </div>
           </div>
+          )}
         </div>
       </main>
 

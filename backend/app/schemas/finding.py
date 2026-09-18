@@ -45,6 +45,10 @@ class FindingSchema(BaseModel):
     # Deterministic SHA-256 fingerprint (line-shift-invariant) for deduplication and SARIF
     fingerprint: str = Field(description="sha256(rule_id||ast_path||matched_text_hash||evidence_kind)")
     origin: FindingOrigin
+    tool_name: Optional[str] = None
+    tool_version: Optional[str] = None
+    raw_evidence_ref: Optional[uuid.UUID] = None
+    source_file_path: Optional[str] = None
     rule_id: Optional[str] = None
     category: str
     severity: Severity
@@ -61,6 +65,21 @@ class FindingSchema(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class RawFinding(BaseModel):
+    """Uniform raw finding returned by static analyzer tool adapters."""
+    tool_name: str
+    tool_version: Optional[str] = None
+    rule_id: Optional[str] = None
+    severity_raw: Optional[str] = None
+    message: str
+    file_path: Optional[str] = None
+    start_line: Optional[int] = None
+    start_col: Optional[int] = None
+    end_line: Optional[int] = None
+    end_col: Optional[int] = None
+    raw_evidence: Optional[dict] = None
+
+
 class FeedbackRequest(BaseModel):
     useful: Optional[bool] = None
     disposition: Optional[str] = Field(
@@ -68,12 +87,18 @@ class FeedbackRequest(BaseModel):
         description="accepted | rejected | false_positive",
     )
     comment: Optional[str] = Field(default=None, max_length=2000)
+    reason_category: Optional[str] = Field(
+        default=None,
+        description="false_positive_style | false_positive_test | false_positive_dependency | real_issue | not_applicable",
+    )
 
 
 class FeedbackResponse(BaseModel):
     feedback_id: uuid.UUID
     finding_id: uuid.UUID
     disposition: Optional[str] = None
+    reason_category: Optional[str] = None
+    indexed_for_learning: bool = False
 
 
 # Internal schema used during agent output parsing (not API-facing)

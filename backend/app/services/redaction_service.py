@@ -15,8 +15,11 @@ from typing import Any
 _REDACT_PATTERNS = [
     # AWS Access Key
     re.compile(r"AKIA[0-9A-Z]{16}"),
-    # GitHub tokens
-    re.compile(r"gh[pos]_[A-Za-z0-9]{35,}"),
+    # GitHub tokens (PATs, OAuth, Installation tokens, Refresh tokens, Fine-grained PATs)
+    # Prefixes: ghp_ (classic PAT), ghs_ (installation), ghu_ (user-to-server),
+    # gho_ (OAuth app), ghr_ (refresh), github_pat_ (fine-grained PAT)
+    re.compile(r"gh[posur]_[A-Za-z0-9_]{16,}"),
+    re.compile(r"github_pat_[A-Za-z0-9_]{20,}"),
     # OpenAI keys
     re.compile(r"sk-[A-Za-z0-9]{48}"),
     # Slack tokens
@@ -39,6 +42,10 @@ def redact(text: str) -> str:
     for pattern in _REDACT_PATTERNS:
         text = pattern.sub(_REPLACEMENT, text)
     return text
+
+
+# Backwards-compatible alias for secret redaction
+redact_secrets = redact
 
 
 def redact_dict(data: dict) -> dict:

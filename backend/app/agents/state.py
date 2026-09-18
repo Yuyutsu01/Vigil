@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 from app.rules.engine import DetectedFinding
-from app.schemas.finding import RawLLMFinding
+from app.schemas.finding import RawFinding, RawLLMFinding
 
 
 @dataclass
@@ -33,6 +33,10 @@ class ReviewGraphState:
 
     # Rule engine stage
     rule_findings: List[DetectedFinding] = field(default_factory=list)
+
+    # Tool adapter stage (FR-101)
+    tool_findings: List[RawFinding] = field(default_factory=list)
+    adapter_diagnostics: List[dict] = field(default_factory=list)
 
     # LLM stage
     llm_security_findings: List[RawLLMFinding] = field(default_factory=list)

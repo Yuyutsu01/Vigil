@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Unit, Security & Acceptance Tests
+    name: Unit, Security, Integration & Acceptance Tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,26 +23,92 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install dependencies
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install system dependencies for WeasyPrint & analyzers
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0
+
+      - name: Install Python dependencies
         run: |
           pip install -r backend/requirements.txt
           pip install -r backend/requirements-test.txt
 
+      - name: Run skill audit on skills
+        run: |
+          npx --yes skill-audit scan ./skills
+
+      - name: Verify migrations (Phase 1, Phase 2, Phase 3 chain)
+        run: |
+          alembic upgrade head
+          alembic downgrade base
+          alembic upgrade head
+
       - name: Run unit tests
         run: pytest tests/unit/ -v --tb=short
 
-      - name: Run security tests (AC-5: no code execution)
+      - name: Run security tests (token leakage, SSRF, write blocking, isolation)
         run: pytest tests/security/ -v --tb=short
 
-      - name: Run acceptance tests (AC-1 through AC-7)
+      - name: Run integration tests (GitHub connection, webhooks, repo reviews)
+        run: pytest tests/integration/ -v --tb=short
+
+      - name: Run acceptance tests (AC-1 through AC-104)
         run: pytest tests/acceptance/ -v --tb=short
+
+      - name: Verify merge_pull_request is never invoked
+        run: |
+          CALLS=$(grep -rn "merge_pull_request" backend/app/ | grep -v "def merge_pull_request" | grep -v "raise NotImplementedError" || true)
+          if [ -n "$CALLS" ]; then
+            echo "::error::Forbidden call to merge_pull_request found: $CALLS"
+            exit 1
+          fi
+
+      - name: Run Phase 4 Security Meta-Tests
+        run: |
+          pytest tests/security/test_github_write_allowlist_completeness.py -v
+          pytest tests/security/test_patch_application_requires_all_gates.py -v
 
       - name: Coverage report
         run: |
-          pytest tests/unit/ tests/security/ tests/acceptance/ \
+          pytest tests/unit/ tests/security/ tests/integration/ tests/acceptance/ \
             --cov=backend/app \
             --cov-report=term-missing \
             --cov-fail-under=70
+
+  sandbox-isolation:
+    name: Sandbox Isolation Real Container Tests (Category B)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install gVisor (runsc)
+        run: |
+          sudo apt-get update && sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+          curl -fsSL https://gvisor.dev/archive.key | sudo gpg --dearmor -o /usr/share/keyrings/gvisor-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/gvisor-archive-keyring.gpg] https://storage.googleapis.com/gvisor/releases release main" | sudo tee /etc/apt/sources.list.d/gvisor.list > /dev/null
+          sudo apt-get update && sudo apt-get install -y runsc
+          sudo runsc install
+          sudo systemctl restart docker
+          docker info
+      - name: Install Python dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-test.txt
+      - name: Verify sandbox isolation tests ran
+        run: |
+          pytest tests/security/test_sandbox_isolation.py -v | tee out.txt
+          if grep -q "SKIPPED" out.txt; then
+            echo "::error::Sandbox isolation tests were skipped in CI"
+            exit 1
+          fi
 
   lint:
     name: Lint
@@ -54,3 +120,4 @@ jobs:
           python-version: "3.12"
       - run: pip install ruff
       - run: ruff check backend/app tests --select=E,F --ignore=E501
+

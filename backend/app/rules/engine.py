@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class DetectedFinding:
-    """Internal intermediate finding produced by the rule engine."""
+    """Internal intermediate finding produced by the rule engine or tool adapters."""
     rule_id: str
     category: str
     severity: str
@@ -46,6 +46,10 @@ class DetectedFinding:
     end_line: Optional[int] = None
     end_col: Optional[int] = None
     origin: FindingOrigin = FindingOrigin.rule
+    tool_name: Optional[str] = None
+    tool_version: Optional[str] = None
+    raw_evidence: Optional[dict] = None
+    raw_evidence_ref: Optional[uuid.UUID] = None
 
 
 def _compute_fingerprint(rule_id: str, ast_path: str, matched_text: str, evidence_kind: str) -> str:
@@ -57,6 +61,10 @@ def _compute_fingerprint(rule_id: str, ast_path: str, matched_text: str, evidenc
     matched_text_hash = hashlib.sha256(matched_text.encode("utf-8")).hexdigest()
     raw = f"{rule_id}:{ast_path}:{matched_text_hash}:{evidence_kind}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+# Public alias for computing deterministic fingerprints across review modules
+compute_fingerprint = _compute_fingerprint
 
 
 # ─── Secret Detection (VIGIL-SEC-001) ──────────────────────────────────────

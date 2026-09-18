@@ -60,11 +60,40 @@ class MockProvider(ModelProvider):
         self,
         prompt: str,
         schema: Type[BaseModel],
-    ) -> RawLLMResponse:
+    ) -> Any:
         """
         Return a deterministic response based on a hash of the prompt content.
-        Used for AC-4 and AC-7 test reliability.
+        Supports RawLLMResponse, PatchDraft, and PRReviewDraftOutput schemas.
         """
+        # Support PatchDraft schema
+        if schema.__name__ == "PatchDraft":
+            diff = (
+                "--- a/file.py\n"
+                "+++ b/file.py\n"
+                "@@ -1,3 +1,3 @@\n"
+                "-# vulnerable\n"
+                "+# remediated\n"
+            )
+            return schema(
+                unified_diff=diff,
+                rationale="Remediate vulnerability with safe input sanitization.",
+                assumptions="Assumes clean caller parameters.",
+                tests_to_run=["pytest tests/test_security.py"],
+            )
+
+        # Support PRReviewDraftOutput schema
+        if schema.__name__ == "PRReviewDraftOutput":
+            return schema(
+                summary_markdown="### Vigil Governed PR Review\n\n- Security scan: Clean\n- Recommendations provided.",
+                comments=[
+                    {
+                        "path": "file.py",
+                        "line": 1,
+                        "body": "Consider parameterized queries here to prevent injection.",
+                    }
+                ],
+            )
+
         # Derive a deterministic seed from the prompt
         prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         seed_int = int(prompt_hash[:8], 16)
@@ -114,7 +143,7 @@ class OpenAIProvider(ModelProvider):
         self,
         prompt: str,
         schema: Type[BaseModel],
-    ) -> RawLLMResponse:
+    ) -> Any:
         try:
             from langchain_openai import ChatOpenAI  # type: ignore
             from langchain_core.messages import HumanMessage  # type: ignore
@@ -132,13 +161,14 @@ class OpenAIProvider(ModelProvider):
             start = content.find("{")
             end = content.rfind("}") + 1
             if start == -1:
-                return RawLLMResponse(findings=[])
+                return schema()
 
             data = json.loads(content[start:end])
-            return RawLLMResponse(**data)
+            return schema(**data)
         except Exception as e:
             logger.error("OpenAI provider error: %s", e)
-            return RawLLMResponse(findings=[])
+            return schema()
+
 
 
 def get_provider(provider_name: str, **kwargs) -> ModelProvider:

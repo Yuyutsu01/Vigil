@@ -14,6 +14,7 @@ from app.agents.capabilities import (
     capability_llm_quality,
     capability_llm_security,
     capability_parse,
+    capability_run_adapters,
     capability_run_rules,
     capability_triage,
 )
@@ -40,11 +41,12 @@ async def run_review_graph(
     Execute the full review LangGraph for a single submission.
 
     Sequence of capability nodes (LangGraph think→act→observe per iteration):
-      1. parse_capability       — syntax validation
-      2. rules_capability       — deterministic baseline rules
-      3. llm_security_capability — bounded AI security reasoning (policy-guarded)
-      4. llm_quality_capability  — bounded AI quality reasoning (policy-guarded)
-      5. triage_capability       — deterministic deduplication and ranking (NO LLM)
+      1. parse_capability        — syntax validation
+      2. rules_capability        — deterministic baseline rules
+      3. adapters_capability     — static analyzer adapters (Bandit, Semgrep, Ruff, ESLint)
+      4. llm_security_capability — bounded AI security reasoning (policy-guarded)
+      5. llm_quality_capability  — bounded AI quality reasoning (policy-guarded)
+      6. triage_capability       — deterministic deduplication and ranking (NO LLM)
 
     The outer policy layer (policy.py) enforces budget/deadline/retry-once before
     every LLM call. The sandbox (NoOpSandboxRuntime) is injected but not invoked.
@@ -77,17 +79,21 @@ async def run_review_graph(
         state = await capability_run_rules(state)
         state.iterations += 1
 
-        # ── Node 3: LLM Security (policy-guarded) ─────────────────────────
+        # ── Node 3: Adapters (FR-101) ──────────────────────────────────────
+        state = await capability_run_adapters(state)
+        state.iterations += 1
+
+        # ── Node 4: LLM Security (policy-guarded) ─────────────────────────
         state = await capability_llm_security(state, provider)
         state.iterations += 1
 
-        # ── Node 4: LLM Quality (policy-guarded) ──────────────────────────
+        # ── Node 5: LLM Quality (policy-guarded) ──────────────────────────
         # Only if budget/deadline still permits
         if not state.is_deadline_exceeded() and not state.is_budget_exhausted():
             state = await capability_llm_quality(state, provider)
             state.iterations += 1
 
-        # ── Node 5: Triage (deterministic — NO LLM) ───────────────────────
+        # ── Node 6: Triage (deterministic — NO LLM) ───────────────────────
         state = await capability_triage(state)
         state.iterations += 1
 

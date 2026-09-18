@@ -61,6 +61,27 @@ services:
       retries: 3
       start_period: 30s
 
+  # ── Webhook ARQ Worker (Phase 3, B4) ───────────────────────────────────────
+  webhook_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vigil_webhook_worker
+    restart: unless-stopped
+    command: ["arq", "app.integrations.github.webhook_worker.WorkerSettings"]
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://vigil:vigil@postgres:5432/vigil"
+      REDIS_URL: "redis://redis:6379/0"
+      VIGIL_ENV: "${VIGIL_ENV:-development}"
+      GITHUB_APP_ID: "${GITHUB_APP_ID:-}"
+      GITHUB_APP_PRIVATE_KEY_PATH: "${GITHUB_APP_PRIVATE_KEY_PATH:-}"
+      GITHUB_APP_WEBHOOK_SECRET: "${GITHUB_APP_WEBHOOK_SECRET:-}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
     build:

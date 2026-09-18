@@ -122,8 +122,9 @@ async def create_and_run_review(
         await db.commit()
         return run
 
-    # 5. Persist findings
-    await _persist_findings(db, run_id, tenant_id, state.final_findings)
+    # 5. Persist raw tool findings and final findings
+    tool_finding_map = await _persist_tool_findings(db, run_id, tenant_id, state.tool_findings)
+    await _persist_findings(db, run_id, tenant_id, state.final_findings, tool_finding_map)
 
     # 6. Update run status
     if state.parked_reason:
@@ -159,66 +160,151 @@ async def create_and_run_review(
     return run
 
 
+async def _persist_tool_findings(
+    db: AsyncSession,
+    run_id: uuid.UUID,
+    tenant_id: uuid.UUID,
+    tool_findings: List[Any],
+) -> dict[tuple[str, str], uuid.UUID]:
+    """Persist RawFinding items to tool_findings table. Returns mapping of (tool_name, rule_id) -> tool_finding_id."""
+    from app.models.tool_finding import ToolFinding
+
+    tool_finding_map = {}
+    for tf in tool_findings:
+        tf_id = uuid.uuid4()
+        record = ToolFinding(
+            tool_finding_id=tf_id,
+            run_id=run_id,
+            tenant_id=tenant_id,
+            tool_name=tf.tool_name,
+            tool_version=tf.tool_version,
+            rule_id=tf.rule_id,
+            severity_raw=tf.severity_raw,
+            message=tf.message,
+            file_path=tf.file_path,
+            start_line=tf.start_line,
+            start_col=tf.start_col,
+            end_line=tf.end_line,
+            end_col=tf.end_col,
+            raw_evidence=tf.raw_evidence,
+        )
+        db.add(record)
+        tool_finding_map[(tf.tool_name, tf.rule_id or "")] = tf_id
+    await db.flush()
+    return tool_finding_map
+
+
+async def _persist_single_finding(
+    db: AsyncSession,
+    run_id: uuid.UUID,
+    tenant_id: uuid.UUID,
+    df: DetectedFinding,
+    source_file_path: Optional[str] = None,
+    tool_finding_map: Optional[dict[tuple[str, str], uuid.UUID]] = None,
+) -> Finding:
+    """
+    Persist a single DetectedFinding object to the database as Finding + Evidence rows.
+    Shared across single-file review_service and multi-file repo_review_service (B1).
+    """
+    ev_kind_val = df.evidence_kind.value if hasattr(df.evidence_kind, "value") else str(df.evidence_kind)
+    fingerprint = compute_fingerprint(
+        df.rule_id or "unknown",
+        df.ast_path or "",
+        df.matched_text or "",
+        ev_kind_val,
+    )
+
+    if df.origin == FindingOrigin.tool:
+        tool_name = df.tool_name
+        tool_version = df.tool_version
+        ref = getattr(df, "raw_evidence_ref", None)
+        if not ref and tool_finding_map and df.tool_name:
+            ref = tool_finding_map.get((df.tool_name, df.rule_id or ""))
+    else:
+        tool_name = None
+        tool_version = None
+        ref = None
+
+    if isinstance(df.severity, str):
+        sev_enum = Severity[df.severity] if df.severity in Severity.__members__ else (Severity(df.severity) if df.severity in [s.value for s in Severity] else Severity.medium)
+    else:
+        sev_enum = df.severity
+
+    finding = Finding(
+        finding_id=uuid.uuid4(),
+        run_id=run_id,
+        tenant_id=tenant_id,
+        fingerprint=fingerprint,
+        origin=df.origin,
+        tool_name=tool_name,
+        tool_version=tool_version,
+        raw_evidence_ref=ref,
+        source_file_path=source_file_path,
+        rule_id=df.rule_id,
+        category=df.category,
+        severity=sev_enum,
+        confidence=df.confidence,
+        title=df.title[:255],
+        rationale=df.rationale,
+        remediation=df.remediation,
+    )
+    db.add(finding)
+    await db.flush()
+
+    # Evidence record
+    evidence_kind_map = {
+        "ast_node": EvidenceKind.ast_node,
+        "token_regex": EvidenceKind.token_regex,
+        "llm_reasoning": EvidenceKind.llm_reasoning,
+    }
+    ek = (
+        df.evidence_kind
+        if isinstance(df.evidence_kind, EvidenceKind)
+        else evidence_kind_map.get(str(df.evidence_kind), EvidenceKind.ast_node)
+    )
+
+    if df.origin == FindingOrigin.tool:
+        tool_display = df.tool_name or "vigil-tool"
+    elif df.origin == FindingOrigin.rule:
+        tool_display = "vigil-rules"
+    else:
+        tool_display = "vigil-agent"
+
+    ev = Evidence(
+        evidence_id=uuid.uuid4(),
+        finding_id=finding.finding_id,
+        start_line=df.start_line,
+        start_col=df.start_col,
+        end_line=df.end_line,
+        end_col=df.end_col,
+        ast_path=df.ast_path,
+        tool_name=tool_display,
+        rule_id=df.rule_id,
+        code_excerpt=df.matched_text[:500] if df.matched_text else None,
+        evidence_kind=ek,
+    )
+    db.add(ev)
+    return finding
+
+
 async def _persist_findings(
     db: AsyncSession,
     run_id: uuid.UUID,
     tenant_id: uuid.UUID,
     detected: List[DetectedFinding],
+    tool_finding_map: Optional[dict[tuple[str, str], uuid.UUID]] = None,
+    source_file_path: Optional[str] = None,
 ) -> None:
     """Persist DetectedFinding objects to the database as Finding + Evidence rows."""
-    settings = get_settings()
-
     for df in detected:
-        fingerprint = compute_fingerprint(
-            df.rule_id or "unknown",
-            df.ast_path or "",
-            df.matched_text or "",
-            df.evidence_kind.value,
-        )
-
-        finding = Finding(
-            finding_id=uuid.uuid4(),
+        await _persist_single_finding(
+            db=db,
             run_id=run_id,
             tenant_id=tenant_id,
-            fingerprint=fingerprint,
-            origin=df.origin,
-            rule_id=df.rule_id,
-            category=df.category,
-            severity=Severity(df.severity) if isinstance(df.severity, str) else df.severity,
-            confidence=df.confidence,
-            title=df.title[:255],
-            rationale=df.rationale,
-            remediation=df.remediation,
+            df=df,
+            source_file_path=source_file_path,
+            tool_finding_map=tool_finding_map,
         )
-        db.add(finding)
-        await db.flush()
-
-        # Evidence record
-        evidence_kind_map = {
-            "ast_node": EvidenceKind.ast_node,
-            "token_regex": EvidenceKind.token_regex,
-            "llm_reasoning": EvidenceKind.llm_reasoning,
-        }
-        ek = (
-            df.evidence_kind
-            if isinstance(df.evidence_kind, EvidenceKind)
-            else evidence_kind_map.get(str(df.evidence_kind), EvidenceKind.ast_node)
-        )
-
-        ev = Evidence(
-            evidence_id=uuid.uuid4(),
-            finding_id=finding.finding_id,
-            start_line=df.start_line,
-            start_col=df.start_col,
-            end_line=df.end_line,
-            end_col=df.end_col,
-            ast_path=df.ast_path,
-            tool_name="vigil-rules" if df.origin == FindingOrigin.rule else "vigil-agent",
-            rule_id=df.rule_id,
-            code_excerpt=df.matched_text[:500] if df.matched_text else None,
-            evidence_kind=ek,
-        )
-        db.add(ev)
 
 
 async def get_review_run(
@@ -230,7 +316,8 @@ async def get_review_run(
     result = await db.execute(
         select(ReviewRun)
         .options(
-            selectinload(ReviewRun.findings).selectinload(Finding.evidence)
+            selectinload(ReviewRun.findings).selectinload(Finding.evidence),
+            selectinload(ReviewRun.source_artifact),
         )
         .where(ReviewRun.run_id == run_id, ReviewRun.tenant_id == tenant_id)
     )
@@ -284,3 +371,19 @@ async def delete_review_run(
     )
     await db.commit()
     return "deleted", audit_event.event_id
+
+
+async def get_tool_findings(
+    db: AsyncSession,
+    run_id: uuid.UUID,
+    tenant_id: uuid.UUID,
+) -> List[Any]:
+    """Retrieve raw tool findings for a review run, scoped by tenant."""
+    from app.models.tool_finding import ToolFinding
+
+    result = await db.execute(
+        select(ToolFinding)
+        .where(ToolFinding.run_id == run_id, ToolFinding.tenant_id == tenant_id)
+        .order_by(ToolFinding.created_at.asc())
+    )
+    return list(result.scalars().all())
