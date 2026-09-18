@@ -1,0 +1,56 @@
+name: Vigil CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Unit, Security & Acceptance Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r backend/requirements.txt
+          pip install -r backend/requirements-test.txt
+
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short
+
+      - name: Run security tests (AC-5: no code execution)
+        run: pytest tests/security/ -v --tb=short
+
+      - name: Run acceptance tests (AC-1 through AC-7)
+        run: pytest tests/acceptance/ -v --tb=short
+
+      - name: Coverage report
+        run: |
+          pytest tests/unit/ tests/security/ tests/acceptance/ \
+            --cov=backend/app \
+            --cov-report=term-missing \
+            --cov-fail-under=70
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check backend/app tests --select=E,F --ignore=E501

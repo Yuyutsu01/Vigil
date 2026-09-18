@@ -1,0 +1,538 @@
+Agentic AI Code Review and Security Assistant
+Software Requirements Specification
+Document control
+Value
+Version
+1.0
+Status
+Implementation baseline
+Date
+18 September 2026
+Primary audience
+Product, engineering, security, QA, and operations teams
+Scope
+Phase 1 prototype through advanced repository and pull-request review capabilities
+Purpose. This specification defines a secure, phased product that reviews Python and JavaScript code, explains findings, suggests safe fixes, and progressively adds repository-aware automation. Phase 1 deliberately proves the end-to-end review experience before the product integrates external source-control systems or applies changes.
+1 Introduction
+1.1 Purpose
+The system provides an AI-assisted code-review workflow that combines deterministic checks with agentic reasoning. It is intended to help developers identify correctness, maintainability, and security issues earlier, while keeping humans responsible for approval and merge decisions.
+1.2 Scope
+The product accepts pasted code and uploaded files in Phase 1. Later phases add static-analysis adapters, GitHub repository ingestion, comprehensive reports, patch validation, pull-request reviews, policy-aware routing, and multi-agent orchestration. It does not autonomously merge code, access production systems, or execute untrusted project code outside a controlled sandbox.
+1.3 Definitions
+Term
+Meaning
+Finding
+A normalized issue detected by a rule, tool, or reasoning agent.
+Evidence
+Code location, tool output, or explanation that supports a finding.
+Patch candidate
+A proposed code change; never automatically applied in Phase 1.
+Review run
+A persisted execution that processes one submitted code unit or repository revision.
+Policy
+Organization or repository rules governing checks, severity, data handling, and approvals.
+Agent
+A bounded service role with a defined input, output, permissions, and stop condition.
+1.4 Product goals
+Deliver useful, explainable findings for Python and JavaScript in a first working prototype.
+Prioritize security-critical issues and reduce noisy, non-actionable output through evidence and confidence scoring.
+Provide an extensible architecture for tool-backed analysis, repository context, and pull-request feedback.
+Preserve developer control, source-code confidentiality, and auditable decisions.
+1.5 Out of scope
+Native IDE plugins, autonomous remediation in protected branches, support for every programming language, continuous production monitoring, and legal compliance certification are excluded from the initial release. They may be evaluated after the defined milestones.
+2 Stakeholders and users
+Role
+Need
+Primary interactions
+Developer
+Fast, trusted feedback before commit or review.
+Submit code; inspect findings; copy patch suggestions.
+Security engineer
+Consistent risk classification and evidence.
+Set policies; inspect security findings; tune rules.
+Reviewer or maintainer
+Signal-rich pull-request assistance.
+Review summaries, comments, validation results.
+Platform administrator
+Safe operation and access control.
+Manage integrations, retention, audit access.
+Product owner
+Measured progress from prototype to scale.
+View aggregate quality and adoption metrics.
+3 Product overview
+3.1 Core user journey
+Step
+Phase 1 behavior
+Later behavior
+1 Submit
+Paste code or upload .py, .js, or .ts file.
+Select repository, commit, branch, or pull request.
+2 Prepare
+Validate type and size; redact obvious secrets in logs.
+Fetch scoped repository snapshot and policy context.
+3 Analyze
+Parse, run built-in rules, then request AI reasoning.
+Run configured analyzers and specialized agents in parallel.
+4 Present
+Show prioritized findings and suggested fixes.
+Publish full report, review summary, and optional PR comments.
+5 Validate
+Developer manually applies a change.
+Run sandboxed tests/linting against a proposed patch.
+3.2 Assumptions and constraints
+The user has authority to submit the source code and accepts the configured model-processing terms.
+Phase 1 supports UTF-8 source files up to 250 KB per file and a single-file review; multi-file context is deferred.
+AI output is advisory. Severity, confidence, and source evidence must be visible to users.
+Third-party static analyzers and GitHub access are feature-flagged integrations with least-privilege credentials.
+4 Functional requirements
+4.1 Phase 1 prototype requirements
+ID
+Requirement
+Acceptance measure
+FR-001
+The system shall allow authenticated users to paste source code or upload one Python, JavaScript, or TypeScript file.
+Valid files are accepted; unsupported types receive a clear error.
+FR-002
+The system shall validate file size, encoding, language selection, and empty input before review.
+Invalid submissions never reach analysis and return an actionable message.
+FR-003
+The system shall parse the submitted code and identify syntax errors before deeper analysis.
+Syntax errors include line and column where available.
+FR-004
+The system shall run a baseline ruleset for secrets, unsafe evaluation, injection risks, insecure deserialization, weak cryptography, error handling, and maintainability smells.
+A versioned rule identifier and evidence are stored for every deterministic finding.
+FR-005
+The system shall invoke an AI review agent with code, parser context, applicable rules, and bounded instructions.
+The response conforms to the finding schema or is rejected and retried once.
+FR-006
+The system shall deduplicate and rank findings by severity, confidence, exploitability, and code location.
+Results display Critical, High, Medium, Low, or Info and confidence.
+FR-007
+The system shall display a finding title, explanation, evidence, remediation guidance, and optional patch candidate.
+Each rendered finding links to a valid source range or marks location unavailable.
+FR-008
+The system shall save a review run and its normalized results for the configured retention period.
+Users can retrieve their own completed review by run identifier.
+FR-009
+The system shall provide explicit consent and delete controls for submitted source and review history.
+Deletion requests remove content per retention policy and leave a minimal audit event.
+FR-010
+The system shall never execute submitted code in the Phase 1 production analysis path.
+Security test verifies no interpreter or shell is invoked on submitted content.
+4.2 Iterative expansion requirements
+ID
+Requirement
+Target phase
+FR-101
+Run adapters for Bandit, Semgrep, ESLint, Ruff, and other configured tools; preserve raw tool evidence.
+2
+FR-102
+Generate an exportable HTML/PDF/JSON report with executive summary, findings, trends, and remediation plan.
+2
+FR-103
+Connect GitHub repositories through OAuth or GitHub App installation with repository-scoped access.
+3
+FR-104
+Analyze selected branch, commit, directory, or changed files while honoring repository policy.
+3
+FR-105
+Generate a patch candidate as a unified diff, explain assumptions, and require user approval before application.
+3
+FR-106
+Validate approved patch candidates in an ephemeral sandbox using configured lint, build, and test commands.
+4
+FR-107
+Review pull requests, summarize changed-file risk, and publish draft comments only after policy checks.
+4
+FR-108
+Coordinate specialized agents for triage, dependency risk, dataflow investigation, testing, and report synthesis.
+5
+FR-109
+Learn from user dispositions through a governed feedback loop without training on tenant code by default.
+5
+5 Non functional requirements
+ID
+Category
+Requirement
+NFR-001
+Performance
+Phase 1 median review time shall be <= 20 seconds and p95 <= 60 seconds for a 250 KB file under normal service load.
+NFR-002
+Availability
+Interactive review API shall target 99.5% monthly availability after Phase 1; planned maintenance is excluded.
+NFR-003
+Security
+All external traffic shall use TLS 1.2+; stored sensitive values shall be encrypted with managed keys.
+NFR-004
+Privacy
+Source code is tenant-isolated, is not used for model training by default, and follows configurable retention.
+NFR-005
+Reliability
+Runs shall be idempotent by client request key; partial agent failures shall produce a partial-result state with diagnostics.
+NFR-006
+Explainability
+Every finding shall retain origin, evidence, rationale, severity, confidence, and ruleset/model version.
+NFR-007
+Accessibility
+The web UI shall meet WCAG 2.1 AA for keyboard operation, contrast, labels, and status announcements.
+NFR-008
+Observability
+Services shall emit structured logs, metrics, traces, and immutable security audit events without source-code leakage.
+NFR-009
+Maintainability
+All public APIs shall be versioned; adapters and agents shall have contract tests and independent feature flags.
+NFR-010
+Scalability
+The orchestration layer shall support horizontal workers and queued jobs without changing client API semantics.
+6 Architecture overview
+The architecture separates the interactive control plane from isolated analysis execution. A browser client submits a review request to an API gateway. The Review Orchestrator creates a run, retrieves policy, dispatches deterministic and AI agents, normalizes results, and sends a signed result to the reporting service. Repository and patch-validation capabilities remain isolated behind integration and sandbox boundaries.
+Component
+Responsibility
+Trust boundary
+Web client
+Submission, consent, results, feedback, and approval UI.
+Untrusted client input.
+API gateway and identity
+Authentication, authorization, rate limiting, request validation.
+Public edge.
+Review Orchestrator
+Run lifecycle, policy evaluation, agent routing, retries, result aggregation.
+Application control plane.
+Parser and rule workers
+Language parsing and deterministic local/static checks.
+Isolated worker network.
+AI review service
+Structured reasoning over bounded, sanitized review context.
+Model provider boundary.
+Findings service
+Normalization, deduplication, severity scoring, persistence.
+Tenant data boundary.
+Integration service
+GitHub installation tokens, repository snapshots, PR publishing.
+External SCM boundary.
+Validation sandbox
+Ephemeral build/test execution of approved revision or patch.
+Highest-risk execution boundary.
+Audit and telemetry
+Security events, metrics, tracing, and redacted diagnostics.
+Restricted operations boundary.
+6.1 Logical processing sequence
+Submit -> validate and classify -> create review run -> load policy -> parse and deterministic scan -> AI reasoning -> normalize and score -> policy gate -> persist -> present results. In repository-enabled phases, the sequence additionally snapshots the selected revision, limits context to scope, and creates immutable provenance links.
+6.2 Deployment topology
+Public web application and API gateway in a segmented application network.
+Queue-backed worker pool for parser, tool adapter, report, and agent tasks.
+Encrypted relational database for metadata and findings; encrypted object store for uploaded source and reports.
+Managed secret store for OAuth tokens, signing keys, and model-provider credentials.
+Dedicated, non-production sandbox cluster with no default egress and no access to tenant secrets.
+7 Agent design and responsibilities
+Agent
+Inputs
+Outputs
+Controls
+Intake Agent
+Submission, language, user context.
+Validated review plan; rejection reasons.
+Size/type limits; no code execution.
+Static Analysis Agent
+Source snapshot, ruleset, parser AST.
+Tool findings with rule evidence.
+Pinned tool versions; time limits.
+Security Reasoning Agent
+Sanitized code, AST facts, tool evidence, policy.
+Structured security findings and remediation.
+Schema-only output; prompt-injection-resistant delimiters.
+Quality Review Agent
+Code and style context.
+Correctness and maintainability findings.
+Cannot change severity policy.
+Triage Agent
+All candidate findings.
+Deduplicated, ranked finding set.
+Evidence threshold; deterministic severity cap rules.
+Patch Agent
+Approved finding and relevant source ranges.
+Unified diff plus rationale and tests to run.
+No direct repository write.
+Validation Agent
+Approved revision/diff and allowlisted commands.
+Build, test, lint, and regression verdict.
+Ephemeral sandbox; resource/egress limits.
+Report Agent
+Normalized run results and metrics.
+Audience-specific report.
+No new unsupported findings.
+PR Review Agent
+PR diff, repository policy, validated results.
+Draft summary and comments.
+Human/policy gate before publishing.
+7.1 Agent orchestration rules
+Each agent receives the minimum necessary context and a signed run-scoped authorization.
+Agents exchange typed JSON contracts; free-form prose cannot independently create a blocking security finding.
+The orchestrator enforces budget, deadline, retry, and stop conditions; loops require a maximum iteration count.
+A human decision is required before applying a patch, changing repository settings, publishing external comments where policy requires it, or merging code.
+8 Workflows
+8.1 Phase 1 code review workflow
+Step
+System action
+User-visible result
+1
+Accept paste/upload and language selection; assign request ID.
+Submission confirmation or validation error.
+2
+Create a review run, scan for malformed encoding and known secret patterns in telemetry path.
+Queued or started status.
+3
+Parse source, run baseline rules, and collect AST facts.
+Syntax error shown early if parsing fails.
+4
+Call security and quality reasoning agents with bounded structured prompts.
+Progress state without exposing internal prompts.
+5
+Normalize, deduplicate, rank, and policy-check results.
+Findings ordered by severity and confidence.
+6
+Persist results and render source-linked review.
+Recommendation, evidence, and optional patch candidate.
+7
+Collect thumbs-up/down or disposition feedback.
+Feedback acknowledgement; no automatic ruleset change.
+8.2 Repository and PR workflow
+A maintainer installs a GitHub App with the minimum repository permissions. The integration service exchanges and stores encrypted installation credentials, receives a selected revision or webhook event, and creates an immutable repository snapshot. The orchestrator limits analysis to changed files plus approved contextual files. It runs static tools, agent review, and optional validation. The PR Review Agent generates a draft summary and comments; a configured policy determines whether a human must approve publication. No agent may merge, push, or alter branch protection settings.
+8.3 Patch validation workflow
+A user selects a patch candidate. The system creates a new patch-validation run with the base revision, diff, and allowlisted commands. An isolated sandbox checks out only the snapshot, applies the diff, runs lint/build/test tasks with CPU, memory, disk, time, and network constraints, and returns logs after redaction. Validation success means only that the configured checks passed; it does not guarantee correctness or security.
+9 Data model
+Entity
+Key fields
+Notes
+Tenant
+tenant_id, name, retention_policy, model_policy
+Root data-isolation boundary.
+User
+user_id, tenant_id, role, identity_provider_subject
+Role-based access principal.
+Repository
+repository_id, tenant_id, provider, external_id, installation_id, policy_id
+Added in Phase 3.
+SourceArtifact
+artifact_id, tenant_id, content_ref, checksum, language, size, retention_until
+Content stored separately from metadata.
+ReviewRun
+run_id, tenant_id, artifact_id, status, requested_by, config_version, started_at, completed_at
+Immutable execution record.
+Finding
+finding_id, run_id, category, severity, confidence, title, rationale, status
+Normalized user-facing result.
+Evidence
+evidence_id, finding_id, source_range, tool_name, rule_id, excerpt_ref
+Supports traceability and deduplication.
+PatchCandidate
+patch_id, finding_id, base_checksum, unified_diff, rationale, approval_status
+Never directly executable.
+ValidationRun
+validation_id, patch_id, environment_image, commands, verdict, log_ref
+Sandbox proof record.
+IntegrationCredential
+credential_id, tenant_id, provider, encrypted_secret_ref, scopes, expires_at
+Secret material held only in vault.
+AuditEvent
+event_id, actor, action, target_type, target_id, occurred_at, metadata
+Append-only and source-code-free.
+9.1 Data retention and lifecycle
+The default Phase 1 retention is 30 days for source artifacts and 90 days for normalized findings, configurable per tenant. Users may delete a submission unless a legal hold or administrator policy applies. Backups follow the same encryption and deletion schedule. Audit records retain identifiers and actions but exclude full source excerpts and credentials.
+10 External and internal APIs
+10.1 API principles
+All APIs use HTTPS, JSON, UTC timestamps, UUID identifiers, OAuth 2.1/OIDC bearer tokens, tenant-scoped authorization, and an Idempotency-Key header for create operations. Errors use a stable code, human-readable message, correlation ID, and field errors where appropriate. Public endpoints are versioned under /v1.
+Method and path
+Purpose
+Key request / response
+POST /v1/reviews
+Create code review.
+Request: language, source_text or upload_id, options. Response: run_id, status.
+GET /v1/reviews/{run_id}
+Read status and normalized results.
+Response: status, findings, timings, report links.
+DELETE /v1/reviews/{run_id}
+Request deletion subject to policy.
+Response: deletion_status, audit_id.
+POST /v1/uploads
+Create scoped upload session.
+Response: upload_id, upload_url, constraints.
+POST /v1/findings/{finding_id}/feedback
+Record disposition and optional comment.
+Request: useful, disposition, comment.
+POST /v1/repositories/connect
+Start GitHub installation/OAuth connection.
+Phase 3; response: authorization_url or connection state.
+POST /v1/validation-runs
+Validate an approved patch candidate.
+Phase 4; response: validation_id, status.
+POST /v1/pull-requests/{id}/review
+Request a governed PR review.
+Phase 4; response: review_id, publication_state.
+10.2 Finding contract
+A finding response contains finding_id, run_id, origin (tool or agent), rule_id where applicable, category, severity, confidence, title, rationale, remediation, evidence[] with source ranges, related_finding_ids, patch_candidate_id if present, and disposition. The contract shall reject unbounded HTML, executable payloads, and source excerpts beyond configured limits.
+11 Security and privacy
+11.1 Threat model priorities
+Threat
+Required mitigation
+Malicious source or prompt injection
+Treat source as data; isolate delimiters; prohibit tools and policy changes through model output; validate JSON schema.
+Credential compromise
+Use vault-backed short-lived tokens, least privilege, rotation, redaction, and audit.
+Cross-tenant data exposure
+Tenant IDs enforced in every query, object-store prefix, queue payload, and authorization decision.
+Unsafe code execution
+No Phase 1 execution; later run only in disposable sandboxes with no secrets, limited egress, and quotas.
+AI hallucination or false confidence
+Evidence links, confidence, deterministic corroboration, human approval, and policy thresholds.
+Dependency or tool supply-chain risk
+Pin versions and images, scan artifacts, verify signatures where available, and maintain SBOMs.
+Denial of service
+Rate limits, upload limits, request budgets, queues, circuit breakers, and per-tenant quotas.
+Sensitive data in logs
+Structured redaction, content-free telemetry, access controls, and periodic log review.
+11.2 Authorization model
+Roles are Viewer, Developer, Reviewer, Security Analyst, Repository Maintainer, Tenant Administrator, and Platform Operator. Permissions are additive but constrained by tenant and repository policy. Only Tenant Administrators manage integrations and retention. Repository Maintainers approve repository-level settings. Platform Operators cannot read tenant source by default.
+11.3 Secure development requirements
+Use SAST, dependency scanning, secret scanning, and code review for the product itself.
+Maintain threat-model reviews for each new integration, agent tool, and sandbox image.
+Run penetration testing before external repository integration general availability.
+Maintain incident response playbooks for credential exposure, data access, model-provider outage, and sandbox escape signals.
+12 Testing and quality assurance
+Test level
+Coverage
+Unit
+Parsing, validation, rule adapters, normalization, ranking, policy checks, API serialization, and authorization guards.
+Contract
+Agent JSON schemas, tool adapter outputs, API version compatibility, GitHub webhook verification.
+Integration
+Queue workflows, persistence, object storage, model provider mock, secret vault, and report generation.
+Security
+OWASP API cases, tenant-isolation tests, prompt-injection corpus, secret redaction, RBAC, dependency scans.
+Sandbox
+Resource constraints, egress denial, filesystem isolation, forbidden command behavior, and cleanup.
+End-to-end
+Paste/upload through results, feedback, deletion, repository review, and validation flows by phase.
+Performance
+Concurrency, large permitted files, timeout/retry behavior, p95 latency, and queue saturation.
+Evaluation
+Curated vulnerable and clean Python/JavaScript corpus; measure precision, recall, evidence completeness, and patch validation pass rate.
+User acceptance
+Developers and security reviewers rate usefulness, clarity, false positives, and workflow friction.
+12.1 Quality gates
+A release cannot proceed when Critical known-vulnerability detection regressions are unresolved, tenant-isolation tests fail, source content appears in prohibited logs, a public API contract breaks without a version increment, or the model-output schema failure rate exceeds the agreed operational threshold. Evaluation datasets must be versioned and segregated from tenant source.
+13 Deployment and operations
+13.1 Environments
+Environment
+Purpose
+Data policy
+Local
+Developer testing with synthetic fixtures only.
+No production credentials or tenant source.
+Development
+Shared feature integration.
+Synthetic or explicitly approved non-sensitive fixtures.
+Staging
+Production-like verification and load testing.
+Anonymized/synthetic data; integration test repositories.
+Production
+Customer workloads.
+Tenant-isolated encrypted data and audited access.
+13.2 Release strategy
+Use infrastructure as code, immutable container images, signed build artifacts, automated migrations, and feature flags. Deploy canary releases per tenant or cohort. Roll back stateless services by version; use forward-compatible database migrations and a documented rollback plan. Static-tool and model-prompt/config changes are versioned separately from application code.
+13.3 Operational metrics
+Track run volume, completion and failure rate, queue depth, latency percentiles, agent timeout/schema failure rate, per-tenant cost, finding rate by severity, duplicate rate, feedback usefulness, false-positive dispositions, validation pass rate, PR comment publication rate, and security events. Alert on data-boundary failures, credential errors, sandbox policy violations, elevated timeouts, and model-provider degradation.
+14 Roadmap and milestones
+Milestone
+Indicative duration
+Scope and exit criteria
+M0 Discovery and foundation
+2 weeks
+Finalize policies, threat model, UX flows, evaluation corpus, architecture decisions, and API contracts.
+M1 Phase 1 working prototype
+6 weeks
+Pasted/uploaded Python/JS review, baseline rules, AI findings, persistence, feedback, deletion, and no execution. Internal pilot accepts core criteria.
+M2 Static analysis and reports
+4 weeks
+Tool adapters, normalized evidence, report export, evaluation dashboards, and performance hardening.
+M3 Repository integration
+5 weeks
+GitHub App/OAuth, revision snapshots, repository policy, scope-aware review, and audit trail.
+M4 Fix validation and PR review
+6 weeks
+Patch candidates, sandbox validation, governed PR summaries/comments, and operational runbooks.
+M5 Advanced agentic operations
+6 weeks
+Specialist-agent orchestration, dependency/dataflow investigation, governed learning loop, and scale controls.
+14.1 Phase 1 release acceptance criteria
+A user can successfully paste or upload valid Python/JavaScript code and receive a persisted review result.
+The system catches representative seeded issues from the Phase 1 evaluation corpus, including an exposed secret, Python eval use, JavaScript injection pattern, and insecure deserialization pattern.
+Every displayed finding includes severity, confidence, explanation, and code evidence or an explicit location limitation.
+Unsupported files, malformed input, and parser errors are handled without a server error or model call where parsing is required.
+The product does not execute submitted source, and automated security checks confirm the guarantee.
+Users can retrieve their own review and request deletion; unauthorized users cannot access it.
+The median and p95 review time meet NFR-001 under the Phase 1 load test target.
+15 Risks and mitigations
+Risk
+Impact
+Mitigation and owner
+False positives reduce trust
+High
+Evidence requirements, evaluation corpus, feedback loop, severity calibration. Owner: Security/Product.
+Model output is unsafe or malformed
+High
+Schema validation, constrained prompts, tool isolation, fallback partial results. Owner: AI Platform.
+Repository token overreach
+High
+GitHub App least privilege, short-lived scoped tokens, approval flow, audit. Owner: Platform Security.
+Sandbox escape or cost blowout
+High
+MicroVM/container hardening, no secrets/egress, quotas, monitoring, staged rollout. Owner: Infrastructure.
+Latency/cost grows with context
+Medium
+Scope selection, caching, token budgets, queues, prioritization, model routing. Owner: Engineering.
+Tool findings conflict
+Medium
+Normalized taxonomy, provenance, deduplication, deterministic precedence. Owner: Review Platform.
+Privacy or retention mismatch
+High
+Tenant policy controls, deletion workflows, legal review, audit. Owner: Privacy/Operations.
+Low developer adoption
+Medium
+Fast Phase 1 UX, transparent evidence, feedback-driven tuning, pilot champions. Owner: Product.
+16 Dependencies and open decisions
+Decision
+Proposed default
+Owner / deadline
+AI model provider and data terms
+Use enterprise endpoint with no-training default and regional processing where required.
+Product and Security before M0 exit.
+Initial static tool versions
+Bandit, Semgrep, Ruff, ESLint via pinned containers.
+Engineering before M2 build.
+Identity provider
+OIDC/SAML compatible provider; role mapping at tenant boundary.
+Platform before M1 pilot.
+GitHub integration type
+GitHub App preferred over personal OAuth for scoped repository installations.
+Platform Security before M3.
+Sandbox runtime
+Ephemeral isolated workload with deny-by-default egress.
+Infrastructure before M4.
+Severity taxonomy
+Critical/High/Medium/Low/Info aligned to policy and exploitability.
+Security before M1 test sign-off.
+17 Traceability summary
+Phase 1 requirements FR-001 through FR-010 map to the intake, parser/rule, reasoning, triage, findings, and audit components. NFR-001 through NFR-010 define the quality gates used by performance, security, integration, and evaluation test suites. Later-phase requirements FR-101 through FR-109 are gated by the milestones in Section 14 and must not be exposed to customers until their security controls and acceptance tests are complete.
+18 Approval
+Role
+Approval responsibility
+Name / date
+Product owner
+Confirms product scope and milestone priorities.
+Engineering lead
+Confirms implementation feasibility and interfaces.
+Security lead
+Confirms threat controls, policies, and release gates.
+QA lead
+Confirms test strategy and acceptance evidence.

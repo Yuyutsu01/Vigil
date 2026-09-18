@@ -1,0 +1,181 @@
+"""Finding, Evidence, PatchCandidate (nullable stub), and FindingFeedback models."""
+from __future__ import annotations
+
+import enum
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Enum as SAEnum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _uuid() -> uuid.UUID:
+    return uuid.uuid4()
+
+
+class Severity(str, enum.Enum):
+    critical = "Critical"
+    high = "High"
+    medium = "Medium"
+    low = "Low"
+    info = "Info"
+
+
+class FindingOrigin(str, enum.Enum):
+    rule = "rule"
+    agent = "agent"
+
+
+class EvidenceKind(str, enum.Enum):
+    ast_node = "ast_node"
+    token_regex = "token_regex"
+    llm_reasoning = "llm_reasoning"
+
+
+class FindingStatus(str, enum.Enum):
+    open = "open"
+    accepted = "accepted"
+    rejected = "rejected"
+    false_positive = "false_positive"
+
+
+class Finding(Base):
+    """
+    Normalized, deduplicated review finding.
+
+    finding_id: UUID v7 primary key (database identity).
+    fingerprint: Deterministic SHA-256 per the plan:
+        sha256(rule_id || ast_path || matched_text_hash || evidence_kind)
+        This is what deduplication and SARIF partialFingerprints use.
+        It is line-shift-invariant: inserting blank lines does not change it.
+    See Implementation Plan [C3] and [H3].
+    """
+    __tablename__ = "findings"
+
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    run_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("review_runs.run_id"), nullable=False, index=True
+    )
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, index=True
+    )
+    # Deterministic SHA-256 fingerprint for deduplication and SARIF
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    origin: Mapped[FindingOrigin] = mapped_column(
+        SAEnum(FindingOrigin, name="finding_origin"), nullable=False
+    )
+    # Versioned rule ID (e.g. VIGIL-SEC-001 or LLM-SEC-001)
+    rule_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    category: Mapped[str] = mapped_column(String(64), nullable=False)
+    severity: Mapped[Severity] = mapped_column(
+        SAEnum(Severity, name="finding_severity"), nullable=False
+    )
+    confidence: Mapped[float] = mapped_column(Float, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    remediation: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[FindingStatus] = mapped_column(
+        SAEnum(FindingStatus, name="finding_status"), default=FindingStatus.open
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    review_run: Mapped["ReviewRun"] = relationship(  # type: ignore[name-defined]
+        back_populates="findings",
+        foreign_keys=[run_id],
+    )
+    evidence: Mapped[list["Evidence"]] = relationship(back_populates="finding")
+    feedback: Mapped[list["FindingFeedback"]] = relationship(back_populates="finding")
+    # Nullable stub — no patch generation in Phase 1 (FR-105 is Phase 3)
+    patch_candidate: Mapped["PatchCandidate | None"] = relationship(
+        back_populates="finding", uselist=False
+    )
+
+
+class Evidence(Base):
+    """Source location and tool evidence backing a finding."""
+    __tablename__ = "evidence"
+
+    evidence_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("findings.finding_id"), nullable=False, index=True
+    )
+    # SARIF-compatible source range
+    start_line: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    start_col: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    end_line: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    end_col: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # AST path for fingerprinting; line-shift-invariant
+    ast_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Tool or rule that produced this evidence
+    tool_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    rule_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # Short excerpt of the matched code
+    code_excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_kind: Mapped[EvidenceKind] = mapped_column(
+        SAEnum(EvidenceKind, name="evidence_kind"), nullable=False
+    )
+
+    finding: Mapped["Finding"] = relationship(back_populates="evidence")
+
+
+class PatchCandidate(Base):
+    """
+    NULLABLE STUB ONLY — Phase 1 does NOT generate patch candidates.
+    Patch candidate generation is FR-105, deferred to Phase 3.
+    This table exists for forward-compatibility schema planning only.
+    See Implementation Plan [B4] and IMPLEMENTATION_NOTES.md.
+    """
+    __tablename__ = "patch_candidates"
+
+    patch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("findings.finding_id"), nullable=True
+    )
+    base_checksum: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # unified_diff is NEVER populated in Phase 1
+    unified_diff: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+    approval_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    finding: Mapped["Finding"] = relationship(back_populates="patch_candidate")
+
+
+class FindingFeedback(Base):
+    """User disposition on a finding (FR-009, §8.1 Step 7)."""
+    __tablename__ = "finding_feedback"
+
+    feedback_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=_uuid
+    )
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("findings.finding_id"), nullable=False
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    useful: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    disposition: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    finding: Mapped["Finding"] = relationship(back_populates="feedback")

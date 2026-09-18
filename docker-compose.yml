@@ -1,0 +1,79 @@
+services:
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: vigil_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vigil
+      POSTGRES_PASSWORD: vigil
+      POSTGRES_DB: vigil
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vigil -d vigil"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: vigil_redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vigil_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://vigil:vigil@postgres:5432/vigil"
+      REDIS_URL: "redis://redis:6379/0"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:-CHANGE_ME_IN_PRODUCTION}"
+      VIGIL_ENV: "${VIGIL_ENV:-development}"
+      VIGIL_LLM_PROVIDER: "${VIGIL_LLM_PROVIDER:-mock}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      VIGIL_CORS_ORIGINS: "http://localhost:3000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vigil_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:8000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
