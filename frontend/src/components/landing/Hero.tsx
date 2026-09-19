@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 // Dynamically import Three.js / WebGL particle vortex to prevent SSR canvas errors
@@ -97,10 +98,19 @@ function StarButton({ onClick }: { onClick?: () => void }) {
 
 // Request Demo secondary action button
 function DemoButton({ onClick }: { onClick?: () => void }) {
+  const router = useRouter();
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else {
+      router.push('/register');
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       className="relative isolate inline-flex h-10 shrink-0 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-full border border-white/30 bg-white px-5 py-2 text-sm font-medium text-black shadow-xs transition-all cursor-pointer hover:bg-zinc-200 hover:text-black"
     >
       <span

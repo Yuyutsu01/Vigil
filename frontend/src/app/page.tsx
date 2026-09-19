@@ -19,8 +19,8 @@ export default function LandingPage() {
   // Modal state for interactive live demo terminal simulation
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
-  // Handlers for interactions
-  const handleOpenDemo = () => setIsDemoModalOpen(true);
+  // Handlers for interactions — Request a Demo and Get Started both route to registration
+  const handleOpenDemo = () => router.push('/register');
   const handleGetStarted = () => router.push('/register');
 
   // Smooth scroll dispatching for anchor links
