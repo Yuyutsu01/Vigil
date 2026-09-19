@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import { ContentSections } from '@/components/landing/ContentSections';
+import { ProductShowcase } from '@/components/landing/ProductShowcase';
 import { StatefulExecutionSection } from '@/components/landing/StatefulExecutionSection';
 import { DurableAutonomySection } from '@/components/landing/DurableAutonomySection';
 import { AgentInsightsSection } from '@/components/landing/AgentInsightsSection';
@@ -57,7 +58,13 @@ export default function LandingPage() {
         {/* 2. Screen-Fit 3D Hero with Particle Vortex */}
         <Hero onGetStarted={handleGetStarted} onRequestDemo={handleOpenDemo} />
 
-        {/* 3. Primary Mission Statement, Capabilities & Empirical Benchmarks (#about, #features, #benchmarks) */}
+        {/* 3. Product Showcase — Split layout with code editor mock */}
+        <ProductShowcase
+          onGetStarted={handleGetStarted}
+          onRequestDemo={handleOpenDemo}
+        />
+
+        {/* 4. Primary Mission Statement, Capabilities & Empirical Benchmarks (#about, #features, #benchmarks) */}
         <ContentSections
           onOpenGetStarted={handleGetStarted}
           onOpenDemo={handleOpenDemo}
