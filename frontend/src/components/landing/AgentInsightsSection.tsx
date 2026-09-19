@@ -17,6 +17,10 @@ import {
   ShieldCheck,
   Cpu,
   Boxes,
+  FileCode,
+  CheckCircle2,
+  Target,
+  Settings,
 } from 'lucide-react';
 
 interface AgentInsightsSectionProps {
@@ -143,17 +147,11 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
               <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
                   <div className="flex items-center gap-2 text-white font-medium text-[13px] hover:text-white/90 cursor-pointer">
-                    <svg
-                      className="w-4 h-4 text-white"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                    >
-                      <polygon points="12 2 2 7 12 12 22 7 12 2" fill="white" fillOpacity="0.2" />
-                      <polyline points="2 17 12 22 22 17" />
-                      <polyline points="2 12 12 17 22 12" />
-                    </svg>
+                    <img
+                      src="/images/vigil-logo.png"
+                      alt="Vigil"
+                      className="w-4 h-auto shrink-0 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+                    />
                     <span>Vigil Security</span>
                     <ChevronDown className="w-3.5 h-3.5 text-white/50" />
                   </div>
@@ -164,69 +162,52 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
                 </div>
 
                 <div className="flex flex-col gap-0.5 text-[12.5px] text-white/70">
-                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
-                    <Inbox className="w-3.5 h-3.5 text-white/50" />
-                    <span>Findings Inbox</span>
+                  <button className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white/10 text-white font-medium border border-white/10 text-left shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <LayoutGrid className="w-3.5 h-3.5 text-white" />
+                      <span>Overview</span>
+                    </div>
                   </button>
-                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg bg-white/10 text-white font-medium border border-white/10 text-left shadow-sm">
-                    <BarChart3 className="w-3.5 h-3.5 text-white" />
-                    <span>Security Pulse</span>
+                  <button className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <FileCode className="w-3.5 h-3.5 text-white/50" />
+                      <span>All Reviews</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-1.5 rounded bg-white/10 text-white/70">12</span>
+                  </button>
+                  <button className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <ExternalLink className="w-3.5 h-3.5 text-white/50" />
+                      <span>GitHub PRs</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-1.5 rounded bg-white/10 text-white/70">CI</span>
+                  </button>
+                  <button className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <Activity className="w-3.5 h-3.5 text-white/50" />
+                      <span>Autonomous Patches</span>
+                    </div>
+                    <span className="text-[10px] font-mono px-1.5 rounded bg-white/10 text-white/70">3</span>
+                  </button>
+                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white/50" />
+                    <span>Compliance Dossiers</span>
+                  </button>
+                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
+                    <Target className="w-3.5 h-3.5 text-white/50" />
+                    <span>Benchmark Bench</span>
                   </button>
                   <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
                     <Bot className="w-3.5 h-3.5 text-white/50" />
-                    <span>AST Taint Rules</span>
+                    <span>Agent Fleet</span>
                   </button>
                   <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
-                    <History className="w-3.5 h-3.5 text-white/50" />
-                    <span>PR Audit History</span>
-                  </button>
-                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
-                    <Activity className="w-3.5 h-3.5 text-white/50" />
-                    <span>CWE Matrix</span>
+                    <Settings className="w-3.5 h-3.5 text-white/50" />
+                    <span>Settings</span>
                   </button>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between text-[10.5px] uppercase tracking-wider text-white/40 font-mono px-2.5 mb-1.5">
-                    <span>Repositories</span>
-                    <ChevronDown className="w-3 h-3 text-white/30" />
-                  </div>
-                  <div className="flex flex-col gap-0.5 text-[12.5px] text-white/70">
-                    <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
-                      <LayoutGrid className="w-3.5 h-3.5 text-white/50" />
-                      <span>Microservices</span>
-                    </button>
-                    <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
-                      <Calendar className="w-3.5 h-3.5 text-white/50" />
-                      <span>Pipeline Gates</span>
-                    </button>
-                    <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors text-white/50">
-                      <MoreHorizontal className="w-3.5 h-3.5 text-white/40" />
-                      <span>SARIF Dossiers</span>
-                    </button>
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between text-[10.5px] uppercase tracking-wider text-white/40 font-mono px-2.5 mb-1.5">
-                    <span>Watchlist</span>
-                    <ChevronDown className="w-3 h-3 text-white/30" />
-                  </div>
-                  <div className="flex flex-col gap-1 text-[12px] text-white/70">
-                    <div className="flex items-center gap-2.5 px-2.5 py-1 rounded hover:bg-white/5 cursor-pointer">
-                      <span className="w-2 h-2 rounded-full border border-rose-400 bg-rose-400/30 inline-block" />
-                      <span className="truncate">CWE-89 SQLi</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 px-2.5 py-1 rounded hover:bg-white/5 cursor-pointer">
-                      <span className="w-2 h-2 rounded-full border border-white/30 bg-cyan-400/30 inline-block" />
-                      <span className="truncate">CWE-78 Cmd Injection</span>
-                    </div>
-                    <div className="flex items-center gap-2.5 px-2.5 py-1 rounded hover:bg-white/5 cursor-pointer">
-                      <span className="w-2 h-2 rounded-full border border-amber-400 bg-amber-400/30 inline-block" />
-                      <span className="truncate">CWE-502 Deserialization</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40">
