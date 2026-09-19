@@ -73,16 +73,16 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="text-[11px] font-mono tracking-[0.2em] text-white/40 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-              <span>Autonomous Enforcement</span>
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <span>SECURITY RULES &amp; ENFORCEMENT</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-white leading-[1.15]">
-              Guaranteed policy gates before merge.
+              Guaranteed safety checks before you merge.
             </h2>
           </div>
-          <p className="text-sm text-white/50 max-w-md">
-            Enforce zero-regression policies, verify patches inside microVM sandboxes, and export cryptographic SARIF artifacts.
+          <p className="text-sm md:text-base text-white/70 max-w-md leading-relaxed">
+            Enforce code safety rules, verify fixes inside isolated sandboxes, and export audit reports with one click.
           </p>
         </div>
 

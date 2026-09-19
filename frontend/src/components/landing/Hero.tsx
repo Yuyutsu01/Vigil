@@ -244,33 +244,25 @@ export default function Hero({ onGetStarted, onRequestDemo }: HeroProps) {
           }`}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>ZERO-EXECUTION STATIC SAFETY // 14-AGENT DAG</span>
+          <span>AUTOMATED CODE REVIEW</span>
         </div>
 
         {/* Headline */}
         <h1
-          className={`font-display text-[clamp(1.9rem,4.2vw,3.6rem)] font-normal leading-[1.08] tracking-tight text-white transition-all duration-700 ${
+          className={`font-display text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight text-white transition-all duration-700 ${
             mounted ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
           }`}
         >
-          <span className="block sm:whitespace-nowrap">The Autonomous Security</span>
-          <span className="block bg-gradient-to-b from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent sm:whitespace-nowrap mt-1">
-            Operations Engine for Enterprise Codebases
-          </span>
+          Find bugs and security issues before they reach production.
         </h1>
 
         {/* Subheading */}
         <p
-          className={`mt-4 sm:mt-5 max-w-xl text-center text-xs sm:text-sm lg:text-base leading-relaxed text-zinc-300 transition-all delay-150 duration-700 ${
+          className={`mt-5 sm:mt-6 max-w-2xl mx-auto text-center text-base md:text-lg leading-relaxed text-white/70 transition-all delay-150 duration-700 ${
             mounted ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
           }`}
         >
-          <span className="block sm:whitespace-nowrap">
-            Continuous AST-grounded reasoning, deterministic patch generation,
-          </span>
-          <span className="block sm:whitespace-nowrap text-zinc-400">
-            and zero-execution CI/CD governance across your pull requests.
-          </span>
+          Vigil reviews your Python, JavaScript, and TypeScript code using specialized review agents and proven static analysis tools. Every issue comes with a clear explanation, a suggested fix, and a severity rating — so you can fix problems early and ship with confidence.
         </p>
 
         {/* CTA buttons */}

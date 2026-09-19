@@ -527,11 +527,17 @@ Dashboard statistics are dynamically computed in real time via `GET /v1/tenants/
 
 ---
 
-## [N53] Collapsible Sidebar & Responsive Drawer
+## [N54] Verifiable Landing Page Metrics & Approach B Rationale
 
-- The SecOps sidebar in `frontend/src/components/vigil/Sidebar.tsx` supports collapsible state (collapsing from 240px to 64px icon-only navigation).
-- User collapse preference is persisted to `localStorage` under `'vigil_sidebar_collapsed'` and restored on mount.
-- On viewports < 768px, sidebar defaults to collapsed. On viewports < 640px, the static sidebar is hidden and accessible via a topbar hamburger menu that opens a WCAG 2.1 AA compliant overlay drawer with focus trap and Escape key dismissal via `useModalA11y`.
+- **Problem:** Legacy templates contained unverified placeholder metrics (`94.8% Precision Rate`, `91.2% Vulnerability Recall`, `< 2.1% False Positive Ratio`, `1.8s Avg Review Time`).
+- **Diagnosis:** The evaluation corpus (`tests/evaluation/corpus/`) currently contains 4 labeled samples. Claiming statistical precision/recall percentages with fewer than 10 samples violates truth-in-advertising constraints.
+- **Resolution (Approach B):** Replaced unprovable percentages with four verifiable architectural facts:
+  1. `3 Supported Languages`: Python, JavaScript, TypeScript (enumerated directly in review engine).
+  2. `13 Detection Layers`: 7 baseline AST rules + 6 tool adapters (Bandit, Semgrep, Ruff, ESLint, pip-audit, npm-audit).
+  3. `0 Unsandboxed Runs`: Zero-execution guarantee verified by automated security test suites (`tests/security/test_no_code_execution.py`).
+  4. `Median Review Time`: Dynamically fetched from real tenant telemetry via `GET /v1/tenants/me/stats` (`avg_review_duration_ms`), displaying `—` / `Awaiting first review` for new tenants without fabricated data.
+- **Footnote:** `"Numbers verified by Vigil's static analysis architecture and automated test suites. Submitted code is never executed outside an isolated sandbox."`
+
 
 
 

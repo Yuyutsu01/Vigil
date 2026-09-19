@@ -27,13 +27,13 @@ export const Footer: React.FC<FooterProps> = ({ onLinkClick }) => {
           <div className="flex items-center gap-2 mb-4">
             <span className="font-bold text-white text-base tracking-wider">▲ VIGIL</span>
           </div>
-          <p className="text-xs text-white/50 leading-relaxed max-w-xs">
-            Autonomous, stateful code verification powered by AST graph reasoning and microVM exploit proving.
+          <p className="text-sm text-white/70 leading-relaxed max-w-xs">
+            Automated code review assistant that finds bugs and security issues, explains them in plain language, and validates fixes safely.
           </p>
         </div>
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-white mb-4">Product</div>
-          <ul className="space-y-2.5 text-xs text-white/50">
+          <ul className="space-y-2.5 text-sm text-white/60">
             <li>
               <a
                 href="#about"
@@ -58,7 +58,7 @@ export const Footer: React.FC<FooterProps> = ({ onLinkClick }) => {
                 onClick={(e) => handleNav('benchmarks', e)}
                 className="hover:text-white transition-colors cursor-pointer"
               >
-                Benchmarks
+                Results
               </a>
             </li>
             <li>
@@ -76,15 +76,15 @@ export const Footer: React.FC<FooterProps> = ({ onLinkClick }) => {
                 onClick={(e) => handleNav('verification', e)}
                 className="hover:text-white transition-colors cursor-pointer"
               >
-                Verification
+                Security
               </a>
             </li>
           </ul>
         </div>
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-white mb-4">Compliance</div>
-          <ul className="space-y-2.5 text-xs text-white/50">
-            <li><span className="hover:text-white cursor-pointer">SARIF v2.1.0</span></li>
+          <ul className="space-y-2.5 text-sm text-white/60">
+            <li><span className="hover:text-white cursor-pointer">SARIF Exports</span></li>
             <li><span className="hover:text-white cursor-pointer">SOC 2 Type II</span></li>
             <li><span className="hover:text-white cursor-pointer">ISO 27001 Certified</span></li>
             <li><span className="hover:text-white cursor-pointer">NIST CSF 2.0 Mapping</span></li>
@@ -92,22 +92,22 @@ export const Footer: React.FC<FooterProps> = ({ onLinkClick }) => {
         </div>
         <div>
           <div className="text-xs font-mono uppercase tracking-wider text-white mb-4">Security Lead</div>
-          <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] text-xs text-white/60">
+          <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-white/70">
             <div className="text-white font-medium mb-1">Zero Data Retention</div>
-            Your proprietary code is analyzed in ephemeral memory and never used for model training.
+            Your code is analyzed in isolated memory and never used for model training.
           </div>
         </div>
       </div>
 
       {/* Selector 9: div:nth-of-type(2) - Bottom Copyright & Legal Row */}
-      <div className="max-w-7xl mx-auto pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-white/40 gap-4">
+      <div className="max-w-7xl mx-auto pt-8 flex flex-col sm:flex-row items-center justify-between text-xs sm:text-sm text-white/50 gap-4">
         <div>
-          &copy; 2026 Vigil Autonomous Code Verification. All rights reserved.
+          &copy; 2026 Vigil. All rights reserved.
         </div>
-        <div className="flex items-center gap-6 text-xs text-white/40">
+        <div className="flex items-center gap-6 text-xs sm:text-sm text-white/50">
           <span className="hover:text-white cursor-pointer">Privacy Policy</span>
           <span className="hover:text-white cursor-pointer">Terms of Service</span>
-          <span className="hover:text-white cursor-pointer">Security Whitepaper</span>
+          <span className="hover:text-white cursor-pointer">Security Overview</span>
         </div>
       </div>
     </footer>

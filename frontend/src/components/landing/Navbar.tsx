@@ -3,15 +3,15 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-// Navigation anchor links for landing page sections
+// Navigation anchor links for landing page sections with plain-language labels
 const NAV_LINKS = [
   { href: '#about', label: 'About' },
   { href: '#features', label: 'Capabilities' },
-  { href: '#benchmarks', label: 'Benchmarks' },
+  { href: '#benchmarks', label: 'Results' },
   { href: '#execution', label: 'Pipeline' },
-  { href: '#verification', label: 'Verification' },
-  { href: '#insights', label: 'Fleet' },
-  { href: '#testimonials', label: 'Proof' },
+  { href: '#verification', label: 'Security' },
+  { href: '#insights', label: 'Product' },
+  { href: '#testimonials', label: 'Customers' },
 ];
 
 function Arrow() {
@@ -105,9 +105,6 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
             alt="Vigil"
             className="h-6 sm:h-7 w-auto transition-transform group-hover:scale-105 duration-300"
           />
-          <span className="font-mono text-xs tracking-widest text-white/70 uppercase hidden sm:inline-block">
-            Autonomous SecOps
-          </span>
         </Link>
 
         {/* Desktop Navigation Links */}

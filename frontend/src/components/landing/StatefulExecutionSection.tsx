@@ -31,16 +31,16 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
         {/* Top Header Grid */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="text-[11px] font-mono tracking-[0.2em] text-white/40 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-              <span>Execution Pipeline</span>
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <span>REVIEW PIPELINE</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-white leading-[1.15]">
-              Stateful verification across the entire change surface.
+              Clear visibility across every review and fix.
             </h2>
           </div>
-          <p className="text-sm text-white/50 max-w-md">
-            Every run traverses AST representations, correlates data flow sinks, and synthesizes unified diffs in memory.
+          <p className="text-sm md:text-base text-white/70 max-w-md leading-relaxed">
+            Vigil inspects your code step-by-step, explains the root cause of every finding, and verifies that suggested fixes are safe.
           </p>
         </div>
 

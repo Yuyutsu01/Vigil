@@ -3,9 +3,9 @@ import '../styles/globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'Vigil | Autonomous Security Operations Engine',
+  title: 'Vigil | Automated Code Review & Security',
   description:
-    'Continuous AST-grounded reasoning, deterministic patch generation, and zero-execution CI/CD governance across your multi-agent reviews.',
+    'Vigil reviews your code using specialized review agents and static analysis tools. Get clear explanations, suggested fixes, and safety validation on every pull request.',
   icons: {
     icon: '/images/vigil-logo-square.png',
   },

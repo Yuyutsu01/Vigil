@@ -65,25 +65,24 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="text-[11px] font-mono tracking-[0.2em] text-white/40 uppercase mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-              <span>14-Agent DAG Fleet Telemetry</span>
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <span>MULTI-AGENT REVIEW ENGINE</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-normal tracking-tight text-white leading-[1.15]">
-              Inspect real-time autonomous reasoning.
+              Inspect real-time review intelligence.
             </h2>
           </div>
           <div className="max-w-md">
-            <p className="text-sm text-white/70 leading-relaxed mb-3">
-              <strong className="text-white font-medium">14-Agent DAG Fleet:</strong> 8 LLM agents + 5 deterministic stages + 1 sandbox executor = 14.
-              Six static tool adapters run as sub-processes inside A2 Static Analysis, not as separate agents.
+            <p className="text-sm md:text-base text-white/70 leading-relaxed mb-3">
+              <strong className="text-white font-medium">Coordinated AI Agents:</strong> Specialized agents work together on every step — analyzing code, identifying security risks, writing safer code, and testing fixes safely.
             </p>
             <button
               type="button"
               onClick={() => setShowAgentBreakdown((v) => !v)}
-              className="text-xs font-mono text-emerald-400 hover:text-emerald-300 underline underline-offset-4 cursor-pointer"
+              className="text-xs sm:text-sm font-mono text-emerald-400 hover:text-emerald-300 underline underline-offset-4 cursor-pointer"
             >
-              {showAgentBreakdown ? '▲ Hide full agent breakdown' : '▼ View full 14-agent enumeration'}
+              {showAgentBreakdown ? '▲ Hide full agent breakdown' : '▼ View full agent structure'}
             </button>
           </div>
         </div>

@@ -220,14 +220,14 @@ export const CelestialCTASection: React.FC<CelestialCTASectionProps> = ({
       />
 
       <div className="max-w-4xl mx-auto relative z-10 flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 bg-white/5 text-[11px] font-mono uppercase tracking-widest text-white/70 mb-6">
-          ▲ ENTERPRISE CODE SECURITY
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 bg-white/5 text-xs md:text-sm font-mono uppercase tracking-widest text-cyan-400/80 mb-6">
+          ▲ CODE REVIEW &amp; SECURITY
         </div>
         <h2 className="text-4xl sm:text-6xl font-normal tracking-tight text-white mb-6">
-          Stop vulnerabilities before they reach production.
+          Stop bugs and vulnerabilities before they reach production.
         </h2>
-        <p className="text-sm sm:text-base text-white/60 max-w-xl mb-10 leading-relaxed">
-          Deploy Vigil in 5 minutes via GitHub Actions or connect your repositories for an instant, zero-execution security audit.
+        <p className="text-base sm:text-lg text-white/70 max-w-xl mb-10 leading-relaxed">
+          Connect Vigil to your GitHub repositories in minutes to get clear, automated code reviews and safe fix suggestions on every pull request.
         </p>
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <button
