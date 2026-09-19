@@ -191,6 +191,9 @@ async def github_callback(
             )
             db.add(repo_obj)
         else:
+            repo_obj.tenant_id = tenant_id
+            if not repo_obj.policy_id:
+                repo_obj.policy_id = default_policy.policy_id
             repo_obj.is_connected = True
             repo_obj.installation_id = cred.credential_id
             repo_obj.full_name = full_name
