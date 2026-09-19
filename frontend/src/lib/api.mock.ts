@@ -297,16 +297,74 @@ export const mockApi = {
   async previewCost(repoId: string, data: CostPreviewRequest): Promise<CostPreviewResponse> {
     logMock(`/v1/repositories/${repoId}/cost-preview`, data);
     return {
-      estimated_token_cost: 45000,
-      estimated_usd_cost: 0.09,
       file_count: 12,
-      lines_of_code: 1420,
+      total_bytes: 45000,
+      estimated_input_tokens: 11250,
+      estimated_output_tokens: 3500,
+      estimated_cost_usd: 0.09,
+      cost_cap_usd: 5.00,
+      exceeds_cap: false,
+      within_budget: true,
     };
   },
 
-  async triggerRepositoryReview(repoId: string): Promise<{ review_id: string; status: string }> {
-    logMock(`/v1/repositories/${repoId}/reviews`);
-    return { review_id: 'rev-repo-' + Date.now().toString().slice(-4), status: 'running' };
+  async startGitHubConnect(): Promise<{ install_url: string; state: string }> {
+    logMock('/v1/repositories/connect');
+    throw new Error(
+      'GitHub connect is disabled in mock mode. Set NEXT_PUBLIC_API_MODE=real.'
+    );
+  },
+
+  async previewRepositoryCost(
+    repoId: string,
+    body: { ref_type: string; ref_value: string; scope_mode: string }
+  ): Promise<CostPreviewResponse> {
+    logMock(`/v1/repositories/${repoId}/cost-preview`, body);
+    return {
+      file_count: 12,
+      total_bytes: 45000,
+      estimated_input_tokens: 11250,
+      estimated_output_tokens: 3500,
+      estimated_cost_usd: 0.09,
+      cost_cap_usd: 5.00,
+      exceeds_cap: false,
+      within_budget: true,
+    };
+  },
+
+  async triggerRepositoryReview(
+    repoId: string,
+    body?: { ref_type: string; ref_value: string; scope_mode: string }
+  ): Promise<{
+    repository_review_id: string;
+    repository_id: string;
+    review_run_id: string;
+    ref_type: string;
+    ref_value: string;
+    scope_mode: string;
+    file_count: number;
+    status: string;
+    llm_calls?: number;
+    tokens_used?: number;
+    budget_paused_reason: string | null;
+    created_at: string;
+  }> {
+    logMock(`/v1/repositories/${repoId}/reviews`, body);
+    const runId = 'rev-' + Date.now().toString().slice(-4);
+    return {
+      repository_review_id: 'repo-rev-' + Date.now().toString().slice(-4),
+      repository_id: repoId,
+      review_run_id: runId,
+      ref_type: body?.ref_type || 'branch',
+      ref_value: body?.ref_value || 'main',
+      scope_mode: body?.scope_mode || 'changed_files',
+      file_count: 5,
+      status: 'completed',
+      llm_calls: 0,
+      tokens_used: 0,
+      budget_paused_reason: null,
+      created_at: new Date().toISOString(),
+    };
   },
 
   async getRepositoryReviewStatus(repoId: string, reviewId: string): Promise<RepositoryReviewStatus> {

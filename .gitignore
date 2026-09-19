@@ -42,6 +42,7 @@ docker-compose.override.yml
 Thumbs.db
 
 # Secrets (belt-and-suspenders)
+secrets/
 *.pem
 *.key
 *.p12

@@ -323,11 +323,15 @@ export interface PatchProposal {
 
 export interface Repository {
   repository_id: string;
-  repo_name: string;
+  full_name?: string;
+  repo_name?: string;
   default_branch: string;
-  is_active: boolean;
-  connected_at: string;
+  is_connected?: boolean;
+  is_active?: boolean;
+  connected_at?: string;
+  created_at?: string;
   last_review_at?: string;
+  policy?: any;
 }
 
 export interface GitHubRepo {
@@ -361,10 +365,17 @@ export interface CostPreviewRequest {
 }
 
 export interface CostPreviewResponse {
-  estimated_token_cost: number;
-  estimated_usd_cost: number;
   file_count: number;
-  lines_of_code: number;
+  total_bytes?: number;
+  estimated_input_tokens?: number;
+  estimated_output_tokens?: number;
+  estimated_cost_usd?: number;
+  cost_cap_usd?: number;
+  exceeds_cap?: boolean;
+  within_budget?: boolean;
+  estimated_token_cost?: number;
+  estimated_usd_cost?: number;
+  lines_of_code?: number;
 }
 
 export interface RepositoryReviewStatus {
@@ -565,6 +576,7 @@ export type VigilNavSection =
   | 'agents'
   | 'settings';
 
+
 // ==========================================
 // Error Response Types
 // ==========================================
@@ -579,3 +591,4 @@ export interface ApiErrorResponse {
   detail: ApiErrorDetail;
   correlation_id: string;
 }
+

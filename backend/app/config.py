@@ -42,7 +42,8 @@ class RuntimeSettings(BaseSettings):
         alias="VIGIL_PER_NODE_TIMEOUT_SECONDS",
     )
 
-    model_config = {"populate_by_name": True, "env_file": ".env"}
+    # Allow extra environment variables present in .env file
+    model_config = {"populate_by_name": True, "env_file": ".env", "extra": "ignore"}
 
 
 class Settings(BaseSettings):
@@ -51,6 +52,10 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = Field(default=False, alias="VIGIL_DEBUG")
     environment: str = Field(default="development", alias="VIGIL_ENV")
+    frontend_url: str = Field(
+        default="http://localhost:3000",
+        alias="FRONTEND_URL",
+    )
 
     # ── Database ─────────────────────────────────────────────────────────────
     database_url: str = Field(

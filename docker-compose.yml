@@ -48,9 +48,17 @@ services:
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       VIGIL_CORS_ORIGINS: "http://localhost:3000"
+      FRONTEND_URL: "${FRONTEND_URL:-http://localhost:3000}"
+      GITHUB_APP_ID: "${GITHUB_APP_ID:-}"
+      GITHUB_APP_SLUG: "${GITHUB_APP_SLUG:-}"
+      GITHUB_APP_PRIVATE_KEY_PATH: "${GITHUB_APP_PRIVATE_KEY_PATH:-/app/secrets/github-app.pem}"
+      GITHUB_APP_WEBHOOK_SECRET: "${GITHUB_APP_WEBHOOK_SECRET:-}"
+      GITHUB_CLIENT_ID: "${GITHUB_CLIENT_ID:-}"
+      GITHUB_CLIENT_SECRET: "${GITHUB_CLIENT_SECRET:-}"
     ports:
       - "8000:8000"
     volumes:
+      - ./secrets:/app/secrets:ro
       - ./prompts:/prompts:ro
     depends_on:
       postgres:
@@ -79,9 +87,11 @@ services:
       VIGIL_LLM_PROVIDER: "${VIGIL_LLM_PROVIDER:-mock}"
       GROQ_API_KEY: "${GROQ_API_KEY:-}"
       GITHUB_APP_ID: "${GITHUB_APP_ID:-}"
-      GITHUB_APP_PRIVATE_KEY_PATH: "${GITHUB_APP_PRIVATE_KEY_PATH:-}"
+      GITHUB_APP_SLUG: "${GITHUB_APP_SLUG:-}"
+      GITHUB_APP_PRIVATE_KEY_PATH: "${GITHUB_APP_PRIVATE_KEY_PATH:-/app/secrets/github-app.pem}"
       GITHUB_APP_WEBHOOK_SECRET: "${GITHUB_APP_WEBHOOK_SECRET:-}"
     volumes:
+      - ./secrets:/app/secrets:ro
       - ./prompts:/prompts:ro
     depends_on:
       postgres:

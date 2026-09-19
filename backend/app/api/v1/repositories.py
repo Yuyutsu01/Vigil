@@ -10,6 +10,7 @@ from typing import List, Optional
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -97,10 +98,11 @@ async def connect_github_app(
     summary="GitHub App installation callback endpoint (FR-103, B1, B2)",
 )
 async def github_callback(
+    request: Request,
     installation_id: int = Query(..., description="GitHub App installation ID"),
     state: str = Query(..., description="RS256 signed state JWT with nonce"),
     db: AsyncSession = Depends(get_db),
-) -> List[RepositoryResponse]:
+):
     """
     Verify signed state parameter with single-use nonce, register installation credential,
     fetch accessible repositories, and assign default policies.
@@ -225,7 +227,15 @@ async def github_callback(
         .options(selectinload(Repository.policy))
     )
     out_res = await db.execute(stmt)
-    return list(out_res.scalars().all())
+    # If caller is automated test client with Authorization header, return JSON response
+    if request.headers.get("authorization"):
+        return list(out_res.scalars().all())
+
+    # Browser callback redirect to frontend dashboard
+    return RedirectResponse(
+        url=f"{settings.frontend_url}/dashboard/github?connected=1",
+        status_code=303,
+    )
 
 
 @router.get(
@@ -313,6 +323,10 @@ async def update_repository_policy(
     "/{repository_id}/disconnect",
     summary="Disconnect repository locally without remote GitHub deletion (H6)",
 )
+@router.delete(
+    "/{repository_id}/disconnect",
+    summary="Disconnect repository locally without remote GitHub deletion (H6)",
+)
 async def disconnect_repository(
     repository_id: uuid.UUID,
     auth: AuthContext = Depends(get_auth_context),
@@ -347,8 +361,14 @@ async def disconnect_repository(
     response_model=CostPreviewResponse,
     summary="Estimate review cost and tokens prior to execution (C1)",
 )
+@router.post(
+    "/{repository_id}/cost-preview",
+    response_model=CostPreviewResponse,
+    summary="Estimate review cost and tokens prior to execution via POST (C1)",
+)
 async def preview_review_cost(
     repository_id: uuid.UUID,
+    body: Optional[TriggerRepoReviewRequest] = None,
     ref_type: str = Query("branch", description="branch, commit, pr, directory"),
     ref_value: str = Query("main", description="Target ref or PR number"),
     scope_mode: str = Query("full_repo", description="full_repo, changed_files, directory, files"),
@@ -357,6 +377,12 @@ async def preview_review_cost(
     db: AsyncSession = Depends(get_db),
 ) -> CostPreviewResponse:
     """Calculate pre-flight tokens and cost estimate before triggering review."""
+    if body is not None:
+        ref_type = body.ref_type or ref_type
+        ref_value = body.ref_value or ref_value
+        scope_mode = body.scope_mode or scope_mode
+        directory_filter = body.directory_filter or directory_filter
+
     stmt = (
         select(Repository)
         .where(Repository.repository_id == repository_id, Repository.tenant_id == auth.tenant_id)

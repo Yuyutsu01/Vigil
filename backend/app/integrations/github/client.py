@@ -150,6 +150,7 @@ class GitHubClient:
         params: Optional[Dict[str, Any]] = None,
         json_data: Optional[Dict[str, Any]] = None,
         retries: int = 1,
+        extra_headers: Optional[Dict[str, str]] = None,
     ) -> httpx.Response:
         """Internal dispatch with token refresh retry and rate-limit backoff."""
         m = method.upper()

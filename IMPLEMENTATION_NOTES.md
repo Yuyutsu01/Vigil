@@ -527,7 +527,7 @@ Dashboard statistics are dynamically computed in real time via `GET /v1/tenants/
 
 ---
 
-## [N54] Verifiable Landing Page Metrics & Approach B Rationale
+## [N53] Verifiable Landing Page Metrics & Approach B Rationale
 
 - **Problem:** Legacy templates contained unverified placeholder metrics (`94.8% Precision Rate`, `91.2% Vulnerability Recall`, `< 2.1% False Positive Ratio`, `1.8s Avg Review Time`).
 - **Diagnosis:** The evaluation corpus (`tests/evaluation/corpus/`) currently contains 4 labeled samples. Claiming statistical precision/recall percentages with fewer than 10 samples violates truth-in-advertising constraints.
@@ -537,6 +537,24 @@ Dashboard statistics are dynamically computed in real time via `GET /v1/tenants/
   3. `0 Unsandboxed Runs`: Zero-execution guarantee verified by automated security test suites (`tests/security/test_no_code_execution.py`).
   4. `Median Review Time`: Dynamically fetched from real tenant telemetry via `GET /v1/tenants/me/stats` (`avg_review_duration_ms`), displaying `—` / `Awaiting first review` for new tenants without fabricated data.
 - **Footnote:** `"Numbers verified by Vigil's static analysis architecture and automated test suites. Submitted code is never executed outside an isolated sandbox."`
+
+---
+
+## [N54] Full GitHub Connect Flow & Callback Redirection
+
+- **Full GitHub Connect Flow:**
+  1. Frontend initiates connection via `POST /v1/repositories/connect`, obtaining a signed state token and GitHub App `install_url`.
+  2. User is redirected to GitHub (`https://github.com/apps/{slug}/installations/new`) where they authorize repository access.
+  3. GitHub redirects browser back to `GET /v1/repositories/callback?installation_id=...&state=...`.
+  4. Backend verifies signed JWT state and single-use Redis nonce, queries GitHub installation API for repositories, and persists active `Repository` records with policies.
+- **Callback Redirect Behavior:**
+  - Browser visits to `github_callback` return HTTP `303 See Other` redirecting to `${FRONTEND_URL}/dashboard/github?connected=1`.
+  - API and automated integration test clients sending `Authorization: Bearer <token>` continue receiving HTTP 200 JSON for backward compatibility.
+- **Frontend State Management:**
+  - `GitHubView.tsx` fetches live repositories on mount using `api.listRepositories()`.
+  - When landing on `/dashboard/github?connected=1`, the component immediately refreshes the repository list and invokes `window.history.replaceState({}, '', '/dashboard/github')` to clean the URL query parameter.
+  - Interactive actions include Trigger Review with cost pre-flight budget check, Disconnect with confirmation, and Connect GitHub buttons in header and empty states with WCAG 2.1 AA compliant keyboard focus and ARIA labels.
+
 
 
 

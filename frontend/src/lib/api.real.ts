@@ -355,16 +355,11 @@ export const realApi = {
     });
   },
 
-  // Repositories & CI/CD PR Gates
-  async connectRepository(
-    data: { repo_name: string; default_branch?: string },
-    idempKey?: string
-  ): Promise<Repository> {
-    return apiFetch<Repository>('/v1/repositories/connect', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      idempotencyKey: idempKey || idempotencyKey(),
-    });
+  async startGitHubConnect(): Promise<{ install_url: string; state: string }> {
+    return apiFetch<{ install_url: string; state: string }>(
+      '/v1/repositories/connect',
+      { method: 'POST' }
+    );
   },
 
   async listRepositories(): Promise<Repository[]> {
@@ -387,14 +382,21 @@ export const realApi = {
     });
   },
 
-  async disconnectRepository(repoId: string, idempKey?: string): Promise<{ status: string; repository_id: string }> {
-    return apiFetch<{ status: string; repository_id: string }>(
-      `/v1/repositories/${repoId}/disconnect`,
-      {
-        method: 'DELETE',
-        idempotencyKey: idempKey || idempotencyKey(),
-      }
-    );
+  async disconnectRepository(repoId: string, idempKey?: string) {
+    return apiFetch(`/v1/repositories/${repoId}/disconnect`, {
+      method: 'DELETE',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async previewRepositoryCost(
+    repoId: string,
+    body: { ref_type: string; ref_value: string; scope_mode: string }
+  ): Promise<CostPreviewResponse> {
+    return apiFetch<CostPreviewResponse>(`/v1/repositories/${repoId}/cost-preview`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
   },
 
   async previewCost(
@@ -411,10 +413,24 @@ export const realApi = {
 
   async triggerRepositoryReview(
     repoId: string,
+    body: { ref_type: string; ref_value: string; scope_mode: string },
     idempKey?: string
-  ): Promise<{ review_id: string; status: string }> {
-    return apiFetch<{ review_id: string; status: string }>(`/v1/repositories/${repoId}/reviews`, {
+  ): Promise<{
+    repository_review_id: string;
+    repository_id: string;
+    review_run_id: string;
+    ref_type: string;
+    ref_value: string;
+    scope_mode: string;
+    file_count: number;
+    llm_calls?: number;
+    tokens_used?: number;
+    budget_paused_reason: string | null;
+    created_at: string;
+  }> {
+    return apiFetch(`/v1/repositories/${repoId}/reviews`, {
       method: 'POST',
+      body: JSON.stringify(body),
       idempotencyKey: idempKey || idempotencyKey(),
     });
   },
