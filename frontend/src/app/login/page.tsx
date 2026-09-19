@@ -123,28 +123,6 @@ function LoginForm() {
         </button>
       </form>
 
-      {/* Quick Test Credential Autofill */}
-      <div className="mt-8 pt-6 border-t border-white/10">
-        <div className="text-[11px] font-mono text-white/40 uppercase mb-2.5">
-          Quick Preset Test Accounts:
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => fillTestCredentials('sec-lead@vigil.internal')}
-            className={`px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-[11px] text-zinc-300 font-mono text-left transition-colors cursor-pointer ${focusRing}`}
-          >
-            Lead Reviewer
-          </button>
-          <button
-            type="button"
-            onClick={() => fillTestCredentials('admin@vigil.sec')}
-            className={`px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.06] text-[11px] text-zinc-300 font-mono text-left transition-colors cursor-pointer ${focusRing}`}
-          >
-            SecOps Admin
-          </button>
-        </div>
-      </div>
 
       {/* Compliance footer */}
       <div className="mt-6 flex items-center justify-center gap-1.5 text-[11px] font-mono text-white/40">
