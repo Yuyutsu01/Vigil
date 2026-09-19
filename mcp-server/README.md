@@ -6,15 +6,18 @@ The Vigil MCP Server allows AI coding assistants (Claude Desktop, Cursor, Windsu
 
 ---
 
-## 🛠️ Available MCP Tools
+## 🛠️ Available MCP Tools (8 Tools)
 
 | Tool | Description | Parameters |
 | :--- | :--- | :--- |
-| `health_check` | Check operational status and database/redis connectivity of Vigil backend | None |
-| `submit_code_review` | Submit source code for multi-agent AST and LLM security analysis | `source_code` (str), `language` (`python` \| `javascript` \| `typescript`) |
-| `get_review_results` | Retrieve findings, metrics, and severity breakdown for a review run | `run_id` (str, UUID) |
-| `list_connected_repositories` | List connected GitHub repositories and their CI/CD status | None |
-| `trigger_repository_review` | Trigger security scan on a connected GitHub repository | `repository_id` (str), `ref_type` (str), `ref_value` (str), `scope_mode` (`full_repo` \| `changed_files`) |
+| `vigil_health_check` | Check operational status and database/redis connectivity of Vigil backend | None |
+| `vigil_review_code` | Submit source code for multi-agent AST and LLM security analysis | `source_code` (str), `language` (`python` \| `javascript` \| `typescript`) |
+| `vigil_get_findings` | Retrieve findings, metrics, and severity breakdown for a review run | `run_id` (str, UUID) |
+| `vigil_list_repositories` | List connected GitHub repositories and their CI/CD status | None |
+| `vigil_trigger_repo_review` | Trigger security scan on a connected GitHub repository | `repository_id` (str), `ref_type` (str), `ref_value` (str), `scope_mode` (`full_repo` \| `changed_files`) |
+| `vigil_generate_patch` | Generate autonomous surgical unified diff remediation patch | `finding_id` (str, UUID) |
+| `vigil_validate_patch` | Execute sandbox behavioral validation & test execution in gVisor | `patch_id` (str, UUID) |
+| `vigil_get_agent_tree` | Fetch 14-stage multi-agent DAG execution tree, status nodes & timing | `run_id` (str, UUID) |
 
 ---
 

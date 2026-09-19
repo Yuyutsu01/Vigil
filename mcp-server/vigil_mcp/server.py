@@ -1,5 +1,6 @@
 """
 Vigil MCP Server - Model Context Protocol integration for Vigil Automated Code Review & Security Assistant.
+Exposes the complete suite of 8 Vigil security, remediation, and telemetry tools.
 """
 from typing import Optional, Dict, Any, List
 import os
@@ -22,7 +23,7 @@ def _get_headers() -> Dict[str, str]:
 
 
 @mcp.tool()
-async def health_check() -> Dict[str, Any]:
+async def vigil_health_check() -> Dict[str, Any]:
     """Check the health and operational status of the Vigil backend service."""
     async with httpx.AsyncClient() as client:
         try:
@@ -33,15 +34,15 @@ async def health_check() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def submit_code_review(
+async def vigil_review_code(
     source_code: str,
     language: str = "python",
 ) -> Dict[str, Any]:
     """
-    Submit source code for automated multi-agent security review.
+    Submit source code for automated multi-agent security and quality review.
     
     Args:
-        source_code: The raw code to analyze.
+        source_code: The raw source code to analyze.
         language: Programming language ('python', 'javascript', or 'typescript').
     """
     async with httpx.AsyncClient() as client:
@@ -63,7 +64,7 @@ async def submit_code_review(
 
 
 @mcp.tool()
-async def get_review_results(run_id: str) -> Dict[str, Any]:
+async def vigil_get_findings(run_id: str) -> Dict[str, Any]:
     """
     Retrieve review status, metrics, and security findings for a given review run ID.
     
@@ -84,7 +85,7 @@ async def get_review_results(run_id: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def list_connected_repositories() -> Dict[str, Any]:
+async def vigil_list_repositories() -> Dict[str, Any]:
     """List all connected GitHub repositories and their CI/CD status."""
     async with httpx.AsyncClient() as client:
         try:
@@ -100,7 +101,7 @@ async def list_connected_repositories() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def trigger_repository_review(
+async def vigil_trigger_repo_review(
     repository_id: str,
     ref_type: str = "branch",
     ref_value: str = "main",
@@ -127,6 +128,69 @@ async def trigger_repository_review(
                 json=payload,
                 headers=_get_headers(),
                 timeout=30.0,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def vigil_generate_patch(finding_id: str) -> Dict[str, Any]:
+    """
+    Generate an autonomous surgical unified diff remediation patch for a specific security finding.
+    
+    Args:
+        finding_id: UUID of the security finding to remediate.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(
+                f"{VIGIL_API_URL}/v1/findings/{finding_id}/patches",
+                headers=_get_headers(),
+                timeout=30.0,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def vigil_validate_patch(patch_id: str) -> Dict[str, Any]:
+    """
+    Execute sandbox behavioral validation and regression tests for a candidate patch inside gVisor.
+    
+    Args:
+        patch_id: UUID of the generated candidate patch.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.post(
+                f"{VIGIL_API_URL}/v1/patches/{patch_id}/validate",
+                headers=_get_headers(),
+                timeout=45.0,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            return {"status": "error", "error": str(e)}
+
+
+@mcp.tool()
+async def vigil_get_agent_tree(run_id: str) -> Dict[str, Any]:
+    """
+    Fetch the 14-stage multi-agent DAG execution tree, status nodes, token metrics, and execution timing.
+    
+    Args:
+        run_id: UUID of the review run.
+    """
+    async with httpx.AsyncClient() as client:
+        try:
+            resp = await client.get(
+                f"{VIGIL_API_URL}/v1/reviews/{run_id}/agent-tree",
+                headers=_get_headers(),
+                timeout=15.0,
             )
             resp.raise_for_status()
             return resp.json()
