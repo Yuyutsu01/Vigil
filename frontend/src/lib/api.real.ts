@@ -38,6 +38,7 @@ import {
   FindingSource,
   FindingStatus,
 } from './types';
+import { INITIAL_REVIEWS, INITIAL_FINDINGS } from '@/data/vigilData';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -254,8 +255,23 @@ export const realApi = {
   },
 
   async getReview(runId: string): Promise<Review> {
-    const raw = await apiFetch<any>(`/v1/reviews/${runId}`, { method: 'GET' });
-    return mapBackendReviewToFrontend(raw);
+    try {
+      const raw = await apiFetch<any>(`/v1/reviews/${runId}`, { method: 'GET' });
+      return mapBackendReviewToFrontend(raw);
+    } catch (err) {
+      // Fallback for sample/benchmark reviews (e.g. rev-a1b2, rev-7720b)
+      const sample = INITIAL_REVIEWS.find((r) => r.id === runId || r.runId === runId);
+      if (sample) {
+        const sampleFindings = INITIAL_FINDINGS.filter(
+          (f) => f.reviewId === sample.id || f.reviewId === sample.runId
+        );
+        return {
+          ...sample,
+          findings: sampleFindings,
+        };
+      }
+      throw err;
+    }
   },
 
   async deleteReview(runId: string, idempKey?: string): Promise<void> {
