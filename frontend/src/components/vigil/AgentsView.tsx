@@ -134,8 +134,7 @@ export const AgentsView: React.FC = () => {
                   <h3 className="text-xs font-bold text-white mt-1.5">{agent.name}</h3>
                   <p className="text-[11px] text-white/50 mt-0.5">{agent.role}</p>
                 </div>
-                <div className="pt-2.5 border-t border-white/10 text-[10.5px] font-mono text-white/60 flex justify-between">
-                  <span>{agent.model}</span>
+                <div className="pt-2.5 border-t border-white/10 text-[10.5px] font-mono text-white/60 flex justify-end">
                   <span className="text-white">{agent.latency}</span>
                 </div>
               </div>
