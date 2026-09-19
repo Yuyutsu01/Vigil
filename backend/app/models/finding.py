@@ -106,7 +106,7 @@ class Finding(Base):
     rule_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     category: Mapped[str] = mapped_column(String(64), nullable=False)
     severity: Mapped[Severity] = mapped_column(
-        SAEnum(Severity, name="finding_severity"), nullable=False
+        SAEnum(Severity, name="finding_severity", values_callable=lambda obj: [e.value for e in obj]), nullable=False
     )
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)

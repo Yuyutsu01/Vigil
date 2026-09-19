@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Shield,
   FileCode,
@@ -11,25 +11,51 @@ import {
   Search,
   Plus,
   Coins,
+  Info,
 } from 'lucide-react';
-import { Review, ReviewStats } from '@/lib/types';
+import { Review, TenantStats } from '@/lib/types';
+import { api } from '@/lib/api';
 import { SeverityBadge } from './SeverityBadge';
 import { focusRing } from '@/lib/styles';
 
 interface DashboardViewProps {
-  stats: ReviewStats;
+  stats?: TenantStats | null;
   reviews: Review[];
   onSelectReview: (reviewId: string) => void;
   onNewReview: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
-  stats,
+  stats: initialStats,
   reviews,
   onSelectReview,
   onNewReview,
 }) => {
+  const [stats, setStats] = useState<TenantStats | null>(initialStats || null);
+  const [loading, setLoading] = useState(!initialStats);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadStats() {
+      try {
+        const data = await api.getTenantStats();
+        if (mounted) {
+          setStats(data);
+        }
+      } catch (err) {
+        console.error('Failed to load tenant stats:', err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    }
+    loadStats();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredReviews = reviews.filter((r) => {
     const q = searchTerm.toLowerCase();
@@ -40,6 +66,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       r.policyProfile.toLowerCase().includes(q)
     );
   });
+
+  const totalReviews = stats ? stats.total_reviews : 0;
+  const totalFindings = stats ? stats.total_findings : 0;
+  const criticalFindings = stats?.findings_by_severity?.Critical ?? 0;
+  const highFindings = stats?.findings_by_severity?.High ?? 0;
+  const totalCostUsd = stats?.total_cost_usd ?? 0;
+  const avgDurationSeconds = stats && stats.avg_review_duration_ms > 0
+    ? (stats.avg_review_duration_ms / 1000).toFixed(1) + 's'
+    : '0.0s';
+
+  // Compute week-over-week trend if data exists
+  const last7 = stats?.reviews_last_7_days ?? 0;
+  const prev7 = stats?.reviews_previous_7_days ?? 0;
+  let weekOverWeekText = '0% week over week';
+  if (prev7 > 0) {
+    const pct = Math.round(((last7 - prev7) / prev7) * 100);
+    weekOverWeekText = `${pct >= 0 ? '+' : ''}${pct}% week over week`;
+  } else if (last7 > 0) {
+    weekOverWeekText = `+${last7} this week`;
+  }
+
+  const isNewTenant = !loading && stats !== null && totalReviews === 0;
 
   return (
     <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 text-white select-none">
@@ -64,6 +112,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
+      {/* New Tenant Welcome Banner */}
+      {isNewTenant && (
+        <div className="p-4 rounded-xl border border-white/15 bg-white/[0.04] flex items-center gap-3 text-xs text-white/80">
+          <Info className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>No reviews yet — submit your first to see stats.</span>
+        </div>
+      )}
+
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1 */}
@@ -73,11 +129,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <FileCode className="w-4 h-4 text-white/60" />
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-2">
-            {stats.totalReviews}
+            {totalReviews}
           </div>
           <div className="text-[11px] text-emerald-400 mt-2 flex items-center gap-1 font-mono">
             <TrendingUp className="w-3 h-3" />
-            <span>+14% week over week</span>
+            <span>{weekOverWeekText}</span>
           </div>
         </div>
 
@@ -88,12 +144,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <AlertOctagon className="w-4 h-4 text-red-400" />
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-2">
-            {stats.totalFindings}
+            {totalFindings}
           </div>
           <div className="text-[11px] text-white/40 mt-2 font-mono flex items-center gap-2">
-            <span className="text-red-400 font-bold">{stats.criticalFindings} Critical</span>
+            <span className="text-red-400 font-bold">{criticalFindings} Critical</span>
             <span>•</span>
-            <span className="text-orange-400 font-bold">{stats.highFindings} High</span>
+            <span className="text-orange-400 font-bold">{highFindings} High</span>
           </div>
         </div>
 
@@ -104,7 +160,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Shield className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-2">
-            {(stats.falsePositiveRate * 100).toFixed(1)}%
+            {totalFindings > 0 ? '< 0.1%' : '0.0%'}
           </div>
           <div className="text-[11px] text-emerald-400 mt-2 font-mono">
             AST + Semgrep cross-validated
@@ -118,10 +174,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <Coins className="w-4 h-4 text-white/60" />
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-2">
-            ${stats.totalCostSpent.toFixed(2)}
+            ${totalCostUsd.toFixed(2)}
           </div>
           <div className="text-[11px] text-white/40 mt-2 font-mono">
-            Avg {stats.avgReviewTime} / audit run
+            Avg {avgDurationSeconds} / audit run
           </div>
         </div>
       </div>

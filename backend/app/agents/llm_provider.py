@@ -128,6 +128,69 @@ class MockProvider(ModelProvider):
         return RawLLMResponse(findings=[finding])
 
 
+class GroqProvider(ModelProvider):
+    """
+    Live Groq LLM provider utilizing OpenAI-compatible API specifications.
+    Default model: llama-3.3-70b-versatile (128K context, ultra-fast).
+    """
+
+    def __init__(
+        self,
+        model_name: str = "llama-3.3-70b-versatile",
+        api_key: str = "",
+    ) -> None:
+        self._model_name = model_name
+        self._api_key = api_key
+        if api_key:
+            try:
+                from groq import AsyncGroq
+                self._client = AsyncGroq(api_key=api_key)
+            except ImportError:
+                logger.error("groq package not installed; GroqProvider client cannot be initialized")
+                self._client = None
+        else:
+            self._client = None
+
+    @property
+    def provider_name(self) -> str:
+        return f"groq/{self._model_name}"
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: Type[BaseModel],
+    ) -> Any:
+        """
+        Execute structured LLM invocation with strict JSON output parsing.
+        """
+        if self._client is None:
+            raise RuntimeError("Groq API key not configured")
+
+        # Use JSON mode: instruct model to respond ONLY with valid JSON conforming to schema
+        response = await self._client.chat.completions.create(
+            model=self._model_name,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a security code review assistant. "
+                        "Respond ONLY with valid JSON matching the "
+                        "requested schema. No prose. No markdown fences."
+                    ),
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+            max_tokens=4096,
+            response_format={"type": "json_object"},
+        )
+
+        import json
+        content = response.choices[0].message.content or "{}"
+        data = json.loads(content)
+        return schema(**data)
+
+
 class OpenAIProvider(ModelProvider):
     """Live OpenAI provider via LangChain. Requires OPENAI_API_KEY."""
 
@@ -170,16 +233,49 @@ class OpenAIProvider(ModelProvider):
             return schema()
 
 
+def get_provider(provider_name: Optional[str] = None, **kwargs) -> ModelProvider:
+    """Factory: return the configured ModelProvider with safe fallbacks."""
+    if provider_name is None:
+        try:
+            from app.config import get_settings
+            settings = get_settings()
+            provider_name = settings.llm_provider
+            if "api_key" not in kwargs:
+                if provider_name == "groq":
+                    kwargs["api_key"] = settings.groq_api_key
+                elif provider_name == "openai":
+                    kwargs["api_key"] = settings.openai_api_key
+        except Exception:
+            provider_name = "mock"
 
-def get_provider(provider_name: str, **kwargs) -> ModelProvider:
-    """Factory: return the configured ModelProvider."""
     if provider_name == "mock":
         return MockProvider()
+    elif provider_name == "groq":
+        api_key = kwargs.get("api_key", "")
+        if not api_key:
+            try:
+                from app.config import get_settings
+                api_key = get_settings().groq_api_key
+            except Exception:
+                api_key = ""
+        if not api_key:
+            logger.warning(
+                "VIGIL_LLM_PROVIDER=groq but GROQ_API_KEY is empty; "
+                "falling back to MockProvider."
+            )
+            return MockProvider()
+        return GroqProvider(
+            model_name=kwargs.get("model_name", "llama-3.3-70b-versatile"),
+            api_key=api_key,
+        )
     elif provider_name == "openai":
         return OpenAIProvider(
             model_name=kwargs.get("model_name", "gpt-4o-mini"),
             api_key=kwargs.get("api_key", ""),
         )
     else:
-        logger.warning("Unknown provider '%s'; falling back to mock", provider_name)
+        logger.warning(
+            "Unknown provider %r; falling back to mock", provider_name
+        )
         return MockProvider()
+

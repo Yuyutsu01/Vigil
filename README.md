@@ -1,6 +1,6 @@
 # Vigil — Enterprise Multi-Agent AI Code Review & Security Remediation Platform
 
-[![Tests](https://img.shields.io/badge/tests-309%20passed-22c55e?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/tests-311%20passed-22c55e?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-3b82f6?style=for-the-badge&logo=python&logoColor=white)](backend/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org)
@@ -19,6 +19,12 @@ Vigil is architected around strict zero-trust security invariants: **user code i
 
 - **Multi-Agent Orchestration (FR-108, SRS §14 Final Milestone)**
   Coordinates 14 specialist agents with Subtree 1 parallel fan-out (Risk Scoring, Dependency, Dataflow) and Subtree 2 strictly serialized validation (Patch -> Test Gen -> Sandbox Validation).
+- **Groq Live LLM Provider & Ultra-Fast Inference (N52)**
+  Powered by Groq's `llama-3.3-70b-versatile` (128K context) with structured JSON enforcement, sub-second reasoning trace latencies, and automatic fallback to `MockProvider` for offline development.
+- **Real-Time Tenant Telemetry & Dashboard Stats (N51)**
+  Real-time data aggregation via `GET /v1/tenants/me/stats` calculating total reviews, finding breakdown by severity, token consumption, cost analysis, and week-over-week trends.
+- **Collapsible & Accessible SecOps Navigation (N53)**
+  Collapsible desktop sidebar (240px to 64px icon-only with tooltips) with `localStorage` persistence and WCAG 2.1 AA compliant mobile drawer with Escape key and focus trap management.
 - **Deterministic Triage Supremacy (A5)**
   Rule-detected security vulnerabilities (OWASP Top 10, CWE) can never be suppressed or downgraded by LLM advisory agents.
 - **Automated Surgical Remediation (FR-105)**
@@ -55,14 +61,14 @@ Vigil is architected around strict zero-trust security invariants: **user code i
 │  │  │  │                                                                                                           │ │ │  │
 │  │  │  │   [A1] AST Parser (ast / Tree-sitter) ────► [A2] Tool Adapters (Bandit, Ruff, Semgrep)                    │ │ │  │
 │  │  │  │                                                       │                                                   │ │ │  │
-│  │  │  │   [A3] LLM Security Agent ────────────────────────────┼────────────────► [A4] LLM Quality Agent           │ │ │  │
+│  │  │  │   [A3] LLM Security Agent (Groq / Llama-3.3) ─────────┼────────────────► [A4] LLM Quality Agent           │ │ │  │
 │  │  │  │                                                       │                                                   │ │ │  │
 │  │  │  │                                           Base Findings Synthesis                                         │ │ │  │
 │  │  │  │                                                       │                                                   │ │ │  │
 │  │  │  │               ┌───────────────────────────────┴───────────────────────────────┐                   │ │ │  │
 │  │  │  │               │ Subtree 1: Parallel Fan-Out Benchmarked Fan-Out               │                   │ │ │  │
 │  │  │  │               │   ├─ [A10] Risk Scoring Agent (Historical RAG Precedents)     │                   │ │ │  │
-│  │  │  │               │   ├─ [A11] Dependency Risk Agent (Supply Chain Vulnerabilities│                   │ │ │  │
+│  │  │  │               │   ├─ [A11] Dependency Risk Agent (Supply Chain Advisory)      │                   │ │ │  │
 │  │  │  │               │   └─ [A12] Dataflow Agent (Cross-File AST Taint Tracking)     │                   │ │ │  │
 │  │  │  │               └───────────────────────────────┬───────────────────────────────┘                   │ │ │  │
 │  │  │  │                                               │                                                   │ │ │  │
@@ -100,8 +106,8 @@ Vigil is architected around strict zero-trust security invariants: **user code i
 |:---|:---|:---|:---|
 | **A1** | **AST Parser** | Deterministic AST | Parses code using Python `ast` and Tree-sitter. Zero code execution. Extracts AST nodes and call sites. |
 | **A2** | **Tool Adapter Runner** | Sandboxed CLI | Wraps Bandit, Ruff, and Semgrep with isolated CLI parsing and JSON schema normalization. |
-| **A3** | **LLM Security Agent** | LLM (Policy Guard) | Inspects AST nodes for complex semantic security vulnerabilities with prompt-injection defense. |
-| **A4** | **LLM Quality Agent** | LLM (Policy Guard) | Analyzes code quality, cyclomatic complexity, and error-handling patterns; capped at Medium severity. |
+| **A3** | **LLM Security Agent** | LLM (Groq Llama-3.3) | Inspects AST nodes for complex semantic security vulnerabilities with prompt-injection defense. |
+| **A4** | **LLM Quality Agent** | LLM (Groq Llama-3.3) | Analyzes code quality, cyclomatic complexity, and error-handling patterns; capped at Medium severity. |
 | **A5** | **Deterministic Triage** | Heuristic Arbiter | **Supreme Arbiter**. Deduplicates findings via line-shift-invariant fingerprinting. Rules supersede LLMs. |
 | **A6** | **Patch Agent** | LLM (Structured) | Generates minimal unified diffs for critical/high findings under strict prompt token caps ($1.00 max). |
 | **A7** | **Validation Agent** | gVisor Sandbox | Validates candidate patches inside hardened `runsc` containers. Inspects test outputs and exit codes. |
@@ -159,6 +165,9 @@ The orchestrator immediately bypasses agents A10–A14, routing requests strictl
 
 | Method | Endpoint | Description | Auth |
 |:---|:---|:---|:---|
+| `POST` | `/v1/auth/register` | Register new tenant and admin user account | Public |
+| `POST` | `/v1/auth/login` | Authenticate user and receive scoped JWT token | Public |
+| `GET` | `/v1/tenants/me/stats` | Retrieve aggregated dashboard telemetry & review metrics | JWT |
 | `POST` | `/v1/reviews` | Submit code snippet or artifact for multi-agent review | JWT |
 | `GET` | `/v1/reviews/{id}` | Poll review status, triaged findings, and patch drafts | JWT |
 | `GET` | `/v1/reviews/{id}/agent-tree` | Get multi-agent DAG telemetry, agent durations, and token attributions | JWT |
@@ -172,33 +181,114 @@ The orchestrator immediately bypasses agents A10–A14, routing requests strictl
 
 ---
 
-## Getting Started
+## How to Start with Docker (Recommended)
 
-### Prerequisites
-- **Docker & Docker Compose** (Recommended)
-- **Python 3.11+**
-- **PostgreSQL 16+** & **Redis 7+**
-- **gVisor (`runsc`)** (Optional for local development; required for live sandbox execution)
+Vigil runs fully containerized via Docker Compose, deploying **5 coordinated services**:
+- `vigil_backend`: FastAPI core engine with asynchronous review DAG pipeline.
+- `vigil_frontend`: Next.js 15 standalone console with real-time SecOps dashboards.
+- `vigil_postgres`: PostgreSQL 16 relational store with isolated tenant schemas.
+- `vigil_redis`: Redis 7 in-memory cache for sliding-window rate limiting & Lua budgets.
+- `vigil_webhook_worker`: Background ARQ worker processing GitHub webhooks.
 
-### 1. Run with Docker Compose
+### Step 1: Clone the Repository & Configure Environment
 
 ```bash
-# 1. Clone repository
+# 1. Clone the repository
 git clone https://github.com/yuyutsu01/Vigil.git
 cd Vigil
 
-# 2. Configure environment
-cp backend/.env.template backend/.env
-# Update JWT_SECRET_KEY and optional LLM keys in backend/.env
-
-# 3. Launch database, Redis, backend, and frontend
-docker compose up -d
-
-# 4. Access the web console
-open http://localhost:3000
+# 2. Copy the environment template
+cp .env.example .env
 ```
 
-### 2. Local Bare-Metal Setup
+Edit `.env` to configure your settings:
+```bash
+# ── Live LLM Provider Configuration ──────────────────────────────────────────
+# Options: groq | mock | openai | anthropic
+VIGIL_LLM_PROVIDER=groq
+
+# Optional: Add your Groq API Key (get a free key at https://console.groq.com/keys)
+# If left empty, Vigil automatically falls back to MockProvider for offline dev!
+GROQ_API_KEY=gsk_your_groq_api_key_here
+
+# ── Security & Authentication ────────────────────────────────────────────────
+JWT_SECRET_KEY=CHANGE_ME_BEFORE_PRODUCTION_USE_32_BYTES_MIN
+VIGIL_ENV=development
+```
+
+### Step 2: Build and Launch Containers
+
+Run the compose command with the `--build` flag to build backend and frontend images:
+
+```bash
+docker compose up --build -d
+```
+
+### Step 3: Verify All Containers Are Up & Healthy
+
+```bash
+docker compose ps
+```
+
+Expected output:
+```
+NAME                   IMAGE                  COMMAND                  SERVICE          STATUS                    PORTS
+vigil_backend          vigil-backend          "uvicorn app.main:ap…"   backend          Up 20 seconds (healthy)   0.0.0.0:8000->8000/tcp
+vigil_frontend         vigil-frontend         "docker-entrypoint.s…"   frontend         Up 20 seconds             0.0.0.0:3000->3000/tcp
+vigil_postgres         postgres:16-alpine     "docker-entrypoint.s…"   postgres         Up 25 seconds (healthy)   0.0.0.0:5432->5432/tcp
+vigil_redis            redis:7-alpine         "docker-entrypoint.s…"   redis            Up 25 seconds (healthy)   0.0.0.0:6379->6379/tcp
+vigil_webhook_worker   vigil-webhook_worker   "arq app.integration…"   webhook_worker   Up 20 seconds             8000/tcp
+```
+
+Verify active LLM provider in backend startup logs:
+```bash
+docker compose logs backend | grep "Active LLM provider"
+```
+*Outputs `Active LLM provider: groq/llama-3.3-70b-versatile` (or `Active LLM provider: mock`).*
+
+### Step 4: Access the Applications
+
+- 🌐 **Web Console:** [http://localhost:3000](http://localhost:3000)
+  - **Register Account:** [http://localhost:3000/register](http://localhost:3000/register)
+  - **Login:** [http://localhost:3000/login](http://localhost:3000/login) (Default demo: `demo@vigil.local` / `DemoPass1234`)
+  - **Operations Dashboard:** [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
+- 🔌 **FastAPI REST API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- 🩺 **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
+
+### Step 5: Test a Live Review Run via cURL
+
+```bash
+# 1. Obtain authentication JWT
+TOKEN=$(curl -s -X POST http://localhost:8000/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"demo@vigil.local","password":"DemoPass1234"}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# 2. Submit code for multi-agent review
+RUN_ID=$(curl -s -X POST http://localhost:8000/v1/reviews \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Idempotency-Key: $(python -c 'import uuid; print(uuid.uuid4())')" \
+  -d '{"language":"python","source_text":"import os\ndef run_cmd(user_input):\n    return eval(user_input)"}' \
+  | python -c "import sys,json; print(json.load(sys.stdin)['run_id'])")
+
+# 3. Fetch review findings and agent telemetry
+curl -s http://localhost:8000/v1/reviews/$RUN_ID -H "Authorization: Bearer $TOKEN"
+```
+
+### Stopping or Resetting the Stack
+
+```bash
+# Stop all containers
+docker compose down
+
+# Stop and wipe all persistent database volumes (fresh reset)
+docker compose down -v --remove-orphans
+```
+
+---
+
+## Local Bare-Metal Setup (Alternative)
 
 ```bash
 # 1. Setup Python virtual environment
@@ -222,7 +312,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 ## Verification & Test Suite
 
-Vigil features a comprehensive, multi-layered verification suite with **309+ passing tests** covering acceptance criteria, security boundaries, isolation invariants, and privacy guarantees.
+Vigil features a comprehensive, multi-layered verification suite with **311+ passing tests** covering acceptance criteria, security boundaries, isolation invariants, and privacy guarantees.
 
 ```bash
 # Run the complete test suite
@@ -251,13 +341,14 @@ tests/acceptance/test_ac108_*.py               Multi-Agent DAG & Telemetry      
 tests/acceptance/test_ac109_*.py               Governed Learning Loop           PASSED (1/1)
 tests/security/test_no_shared_state.py         Agent State Isolation            PASSED (2/2)
 tests/privacy/test_consent_default_off.py      GDPR Consent Default OFF         PASSED (2/2)
+tests/integration/test_tenant_stats.py         Real-Time Tenant Telemetry       PASSED (2/2)
 tests/integration/test_killswitch.py           Emergency Kill Switch (IC10)     PASSED (2/2)
 tests/integration/test_daily_budget_window.py  Lua Atomic Budgets (IC1)         PASSED (3/3)
 tests/unit/test_sanitization_module.py         Comment Sanitization (B2)        PASSED (6/6)
 tests/unit/test_risk_scoring_agent.py          Risk Scoring Fallback (IC5)      PASSED (4/4)
 tests/unit/test_executive_summary_agent.py     Summary Fallback (IC6)           PASSED (3/3)
 tests/security/test_patch_application_*.py     6-Gate Patch Safety              PASSED (6/6)
-Full Test Suite Total                          All Suites & Invariants          309 PASSED
+Full Test Suite Total                          All Suites & Invariants          311 PASSED
 ========================================================================================
 ```
 

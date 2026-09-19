@@ -10,6 +10,7 @@ from app.api.v1 import (
     pr_reviews,
     repositories,
     reviews,
+    stats,
     tenants,
     uploads,
     webhooks,
@@ -19,6 +20,7 @@ v1_router = APIRouter()
 v1_router.include_router(auth.router)
 v1_router.include_router(consent.router)
 v1_router.include_router(tenants.router)
+v1_router.include_router(stats.router)
 v1_router.include_router(reviews.router)
 v1_router.include_router(findings.router)
 v1_router.include_router(uploads.router)

@@ -92,10 +92,15 @@ class Settings(BaseSettings):
     rate_limit_user_per_minute: int = Field(
         default=20, alias="VIGIL_RATE_LIMIT_USER_PER_MINUTE"
     )
+    # Registration rate limit: attempts per hour per client IP and domain
+    register_rate_limit_per_hour: int = Field(
+        default=5, alias="VIGIL_REGISTER_RATE_LIMIT_PER_HOUR"
+    )
 
     # ── LLM Provider ─────────────────────────────────────────────────────────
-    # "mock" | "openai" | "anthropic" | "google"
+    # "mock" | "groq" | "openai" | "anthropic" | "google"
     llm_provider: str = Field(default="mock", alias="VIGIL_LLM_PROVIDER")
+    groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     openai_api_key: str = Field(default="", alias="OPENAI_API_KEY")
     anthropic_api_key: str = Field(default="", alias="ANTHROPIC_API_KEY")
     google_api_key: str = Field(default="", alias="GOOGLE_API_KEY")

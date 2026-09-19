@@ -221,6 +221,7 @@ async def get_review(
         findings=finding_schemas,
         finding_count=len(finding_schemas),
         timing_ms=timing_ms,
+        source_text=artifact.content if artifact else None,
     )
 
 

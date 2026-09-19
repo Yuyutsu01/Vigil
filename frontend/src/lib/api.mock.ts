@@ -7,6 +7,8 @@
 import {
   LoginRequest,
   LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
   ReviewRequest,
   ReviewRunResponse,
   AgentTreeResponse,
@@ -26,6 +28,7 @@ import {
   BaseConsentResponse,
   LearningConsentResponse,
   PurgeResponse,
+  TenantStats,
   Review,
   Finding,
 } from './types';
@@ -44,6 +47,18 @@ export const mockApi = {
       expires_in: 3600,
       tenant_id: 'tenant-dev-12345',
       role: 'admin',
+    };
+  },
+
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    logMock('/v1/auth/register', { email: data.email });
+    return {
+      access_token: 'mock-jwt-token-registered',
+      token_type: 'bearer',
+      expires_in: 3600,
+      tenant_id: 'tenant-mock-' + Date.now(),
+      user_id: 'user-mock-' + Date.now(),
+      role: 'developer',
     };
   },
 
@@ -331,6 +346,26 @@ export const mockApi = {
   async publishPRReview(repoId: string, reviewId: string): Promise<{ published_count: number; github_review_id: string }> {
     logMock(`/v1/repositories/${repoId}/reviews/${reviewId}/publish-review`);
     return { published_count: 1, github_review_id: 'gh-rev-9821' };
+  },
+
+  async getTenantStats(): Promise<TenantStats> {
+    logMock('/v1/tenants/me/stats');
+    return {
+      total_reviews: 0,
+      total_findings: 0,
+      findings_by_severity: {
+        Critical: 0,
+        High: 0,
+        Medium: 0,
+        Low: 0,
+        Info: 0,
+      },
+      total_tokens_used: 0,
+      total_cost_usd: 0.0,
+      avg_review_duration_ms: 0,
+      reviews_last_7_days: 0,
+      reviews_previous_7_days: 0,
+    };
   },
 
   async checkHealth(): Promise<{ status: string }> {

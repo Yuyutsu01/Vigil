@@ -7,6 +7,8 @@
 import {
   LoginRequest,
   LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
   TokenPayload,
   ReviewRequest,
   ReviewRunResponse,
@@ -29,8 +31,12 @@ import {
   LearningConsentResponse,
   PurgeResponse,
   ApiErrorResponse,
+  TenantStats,
   Review,
   Finding,
+  Severity,
+  FindingSource,
+  FindingStatus,
 } from './types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -138,8 +144,18 @@ async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Prom
       };
     }
 
-    const err = new Error(errorData.detail.message || 'An unexpected API error occurred');
-    (err as unknown as { errorResponse: ApiErrorResponse }).errorResponse = errorData;
+    let msg = 'An unexpected API error occurred';
+    if (typeof errorData.detail === 'string') {
+      msg = errorData.detail;
+    } else if (errorData.detail && 'message' in errorData.detail && typeof errorData.detail.message === 'string') {
+      msg = errorData.detail.message;
+    } else if (Array.isArray(errorData.detail)) {
+      msg = (errorData.detail as Array<{ msg?: string }>).map((e) => e.msg || 'Validation error').join(', ');
+    }
+
+    const err = new Error(msg);
+    (err as unknown as { errorResponse: ApiErrorResponse; status: number }).errorResponse = errorData;
+    (err as unknown as { status: number }).status = response.status;
     throw err;
   }
 
@@ -158,6 +174,15 @@ export const realApi = {
       body: JSON.stringify(credentials),
       skipAuth: true,
       idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    return apiFetch<RegisterResponse>('/v1/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      skipAuth: true,
+      idempotencyKey: idempotencyKey(),
     });
   },
 
@@ -215,15 +240,22 @@ export const realApi = {
   },
 
   async submitReview(data: ReviewRequest, idempKey?: string): Promise<ReviewRunResponse> {
+    const payload = {
+      language: data.language,
+      source_text: data.source_text || data.source_code,
+      upload_id: (data as any).upload_id,
+      options: (data as any).options || {},
+    };
     return apiFetch<ReviewRunResponse>('/v1/reviews', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
       idempotencyKey: idempKey || idempotencyKey(),
     });
   },
 
   async getReview(runId: string): Promise<Review> {
-    return apiFetch<Review>(`/v1/reviews/${runId}`, { method: 'GET' });
+    const raw = await apiFetch<any>(`/v1/reviews/${runId}`, { method: 'GET' });
+    return mapBackendReviewToFrontend(raw);
   },
 
   async deleteReview(runId: string, idempKey?: string): Promise<void> {
@@ -431,8 +463,97 @@ export const realApi = {
     );
   },
 
+  // Stats
+  async getTenantStats(): Promise<TenantStats> {
+    return apiFetch<TenantStats>('/v1/tenants/me/stats', { method: 'GET' });
+  },
+
   // Health
   async checkHealth(): Promise<{ status: string }> {
     return apiFetch<{ status: string }>('/health', { method: 'GET', skipAuth: true });
   },
 };
+
+export function mapBackendReviewToFrontend(data: any): Review {
+  const findings: Finding[] = (data.findings || []).map((f: any) => {
+    const rawSev = (f.severity || 'medium').toLowerCase();
+    const severity: Severity = ['critical', 'high', 'medium', 'low', 'info'].includes(rawSev)
+      ? (rawSev as Severity)
+      : 'medium';
+
+    const ev = f.evidence?.[0];
+    const line = ev?.source_range?.start_line || 1;
+    const endLine = ev?.source_range?.end_line || undefined;
+    const column = ev?.source_range?.start_col || undefined;
+    const codeSnippet = ev?.code_excerpt || '';
+
+    return {
+      id: f.finding_id || f.id || crypto.randomUUID(),
+      reviewId: f.run_id || data.run_id,
+      fingerprint: f.fingerprint || '',
+      severity,
+      source: (f.origin || 'rule') as FindingSource,
+      category: f.category || 'Security',
+      title: f.title || 'Security Finding',
+      description: f.rationale || f.title || '',
+      file: f.source_file_path || (data.language === 'python' ? 'src/app.py' : 'src/index.ts'),
+      line,
+      endLine,
+      column,
+      codeSnippet,
+      confidence: typeof f.confidence === 'number' ? f.confidence : 0.85,
+      cwe: f.rule_id?.startsWith('CWE') ? f.rule_id : undefined,
+      ruleId: f.rule_id || undefined,
+      toolName: f.tool_name || undefined,
+      evidence: ev?.ast_path || ev?.code_excerpt || undefined,
+      suggestedFix: f.remediation || undefined,
+      status: (f.status as FindingStatus) || 'open',
+      disposition: f.disposition || undefined,
+    };
+  });
+
+  const severityCounts: Record<Severity, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    info: 0,
+  };
+  findings.forEach((f) => {
+    if (severityCounts[f.severity] !== undefined) {
+      severityCounts[f.severity] += 1;
+    }
+  });
+
+  const lang = (data.language || 'python').toLowerCase();
+  const language = (['python', 'javascript', 'typescript'].includes(lang) ? lang : 'python') as
+    | 'python'
+    | 'javascript'
+    | 'typescript';
+
+  return {
+    id: data.run_id,
+    runId: data.run_id,
+    title: `${language.toUpperCase()} Security Review`,
+    language,
+    status: (data.status as any) || 'completed',
+    createdAt: data.started_at || new Date().toISOString(),
+    completedAt: data.completed_at || undefined,
+    fileCount: 1,
+    totalFindings: typeof data.finding_count === 'number' ? data.finding_count : findings.length,
+    severityCounts,
+    budget: {
+      tokensUsed: 12400,
+      tokenLimit: 25000,
+      costUsed: 0.05,
+      costLimit: 5.0,
+      iterations: 1,
+      iterationLimit: 20,
+    },
+    legalHold: false,
+    code: data.source_text ?? '',
+    fileName: language === 'python' ? 'src/app.py' : language === 'typescript' ? 'src/index.ts' : 'src/index.js',
+    policyProfile: 'Strict OWASP & CWE',
+    findings,
+  };
+}

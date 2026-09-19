@@ -228,7 +228,7 @@ In accordance with Vigil SRS NFR-007, an end-to-end accessibility overhaul was c
   - Accepted for Phase 5; further contrast calibration for dimmed secondary metadata can be refined in future milestone styling passes without altering core accessibility infrastructure.
 
 ### 7.3 Focus Trapping Scope & Deferrals
-- All active modals (`DemoModal`, `GetStartedModal`, `DeleteConfirmModal`) enforce strict focus trapping via `useModalA11y`.
+- All active modals (`DemoModal`, `DeleteConfirmModal`) enforce strict focus trapping via `useModalA11y`.
 - Complex nested multi-pane drawer focus-management for inline AST code editor splits is out of scope for M5 and is not scheduled. It would require additional engineering in a hypothetical future milestone.
 
 ---
@@ -237,5 +237,29 @@ In accordance with Vigil SRS NFR-007, an end-to-end accessibility overhaul was c
 
 ### [N49] Production API Target Configuration
 NEXT_PUBLIC_API_URL is baked into the client bundle at build time. For local development and docker-compose, the default value `http://localhost:8000` works because the browser runs on the host. For production deployments where the frontend and backend are on different hosts, NEXT_PUBLIC_API_URL must be set at build time to the actual backend URL (e.g., `https://api.vigil.example.com`). This should be handled by the deployment pipeline, not by editing the Dockerfile.
+
+---
+
+## 9. [N50] User Registration Architecture & Flow
+
+### 9.1 Registration Flow Design
+The landing page "Get Started" call-to-actions across the top navigation bar, hero banner, capability sections, fleet telemetry showcase, and footer now navigate directly to `/register`. The client-side `/register` route presents a dedicated organization and account creation form with:
+- Organization Name (`id="org"`)
+- Work Email (`id="email"`)
+- Password with complexity enforcement (>= 12 characters, at least 1 letter and 1 number) (`id="password"`)
+- Password confirmation (`id="confirm-password"`)
+- Real-time client-side validation and inline field errors
+- WCAG 2.1 AA accessible focus rings, `<label htmlFor>` associations, `role="alert"` notifications, and live status regions.
+
+On valid submission, the client dispatches a `POST /v1/auth/register` request. Upon receiving an HTTP 201 response containing the signed JWT, the client stores `access_token` in `localStorage.vigil_token` and immediately redirects to `/dashboard` (or the query parameter `?redirect=`).
+
+### 9.2 Rationale for Inclusion
+The initial MVP lacked a self-service tenant and user onboarding pathway, requiring pre-seeded database fixtures or manual database seeding for new tenants. Implementing `POST /v1/auth/register` and the dedicated `/register` interface bridges the onboarding gap, allowing new evaluators and hackathon demonstrators to provision a complete isolated workspace seamlessly from the landing page.
+
+### 9.3 Rate Limiting Rationale
+Public unauthenticated endpoints are vulnerable to automated credential enumeration, spam bot tenant provisioning, and resource starvation attacks. A dedicated sliding-window rate limit (`register_rate_limit_per_hour = 5`, configurable via `VIGIL_REGISTER_RATE_LIMIT_PER_HOUR`) is enforced using Redis sorted sets keyed on the combination of the client's source IP address and the registration email domain (`rl:register:{client_ip}:{domain}`). Exceeded attempts receive an HTTP 429 response with a `Retry-After: 3600` header.
+
+### 9.4 PROTOTYPE_ONLY Status of the Local User Store
+The local database user store (`users` table, Argon2id password hashing, and local token issuance) remains strictly flagged as **`PROTOTYPE_ONLY`**. Per Vigil security architecture ([F2]), production deployments must replace local user persistence with an enterprise OpenID Connect (OIDC) / OAuth2 identity provider (e.g. Auth0, Keycloak, or Okta). Tenant isolation invariants remain strictly claim-based and derived from the cryptographic JWT payload.
 
 

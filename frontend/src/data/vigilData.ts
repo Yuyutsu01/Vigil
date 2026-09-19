@@ -565,16 +565,6 @@ export const INITIAL_AGENTS: AgentRun[] = [
 export const MOCK_REVIEWS: Review[] = INITIAL_REVIEWS;
 export const MOCK_FINDINGS: Finding[] = INITIAL_FINDINGS;
 
-export const INITIAL_STATS: ReviewStats = {
-  totalReviews: 3,
-  totalFindings: 7,
-  criticalFindings: 3,
-  highFindings: 2,
-  falsePositiveRate: 0.001,
-  totalCostSpent: 0.55,
-  avgReviewTime: '3.8s',
-};
-
 export const COMPLIANCE_REPORTS: ComplianceReport[] = [
   {
     id: 'dos-soc2-q3-2026',

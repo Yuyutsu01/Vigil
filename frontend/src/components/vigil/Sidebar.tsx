@@ -11,9 +11,12 @@ import {
   Target,
   Settings,
   Plus,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  X,
 } from 'lucide-react';
 import { VigilNavSection } from '@/lib/types';
-
 import { focusRing } from '@/lib/styles';
 
 interface SidebarProps {
@@ -21,6 +24,10 @@ interface SidebarProps {
   onNavigate: (section: VigilNavSection) => void;
   onNewReview: () => void;
   reviewCount: number;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+  isMobileDrawer?: boolean;
+  onCloseMobileDrawer?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -28,8 +35,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   onNewReview,
   reviewCount,
+  collapsed = false,
+  onToggleCollapse,
+  isMobileDrawer = false,
+  onCloseMobileDrawer,
 }) => {
-  const navItems: { section: VigilNavSection; label: string; icon: React.ComponentType<{ className?: string }>; badge?: number | string }[] = [
+  const navItems: {
+    section: VigilNavSection;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: number | string;
+  }[] = [
     { section: 'dashboard', label: 'Overview', icon: LayoutDashboard },
     { section: 'reviews', label: 'All Reviews', icon: FileCode, badge: reviewCount },
     { section: 'github', label: 'GitHub PRs', icon: GitPullRequest, badge: 'CI' },
@@ -41,53 +57,106 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <aside className="w-64 bg-[#070709] border-r border-white/10 flex flex-col justify-between shrink-0 select-none text-white">
-      <div className="p-4 flex flex-col gap-5">
-        <div className="flex items-center justify-between pb-2 border-b border-white/10">
+    <aside
+      className={`${
+        isMobileDrawer
+          ? 'w-64 h-full'
+          : collapsed
+          ? 'w-16'
+          : 'w-64'
+      } bg-[#070709] border-r border-white/10 flex flex-col justify-between shrink-0 select-none text-white transition-all duration-200 ease-in-out`}
+    >
+      <div className={`p-3 sm:p-4 flex flex-col ${collapsed ? 'gap-3 items-center' : 'gap-5'}`}>
+        {/* Header Branding */}
+        <div
+          className={`flex items-center ${
+            collapsed ? 'justify-center' : 'justify-between'
+          } pb-2 border-b border-white/10 w-full`}
+        >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-black font-bold text-xs shadow-[0_0_12px_rgba(255,255,255,0.3)]">
+            <div
+              className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-black font-bold text-xs shadow-[0_0_12px_rgba(255,255,255,0.3)] shrink-0"
+              title="Vigil Console"
+            >
               V
             </div>
-            <div>
-              <div className="font-bold tracking-widest text-xs uppercase text-white">
-                VIGIL CONSOLE
+            {!collapsed && (
+              <div>
+                <div className="font-bold tracking-widest text-xs uppercase text-white truncate">
+                  VIGIL CONSOLE
+                </div>
+                <div className="text-[10px] text-white/40 font-mono">SecOps v2.4.0</div>
               </div>
-              <div className="text-[10px] text-white/40 font-mono">SecOps v2.4.0</div>
-            </div>
+            )}
           </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+
+          {isMobileDrawer ? (
+            <button
+              type="button"
+              onClick={onCloseMobileDrawer}
+              aria-label="Close navigation menu"
+              className={`p-1 rounded-lg text-white/60 hover:text-white hover:bg-white/10 ${focusRing}`}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          ) : !collapsed ? (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          ) : null}
         </div>
 
+        {/* New Review Button */}
         <button
+          type="button"
           onClick={onNewReview}
-          className={`w-full py-2 px-3 bg-white hover:bg-white/90 text-black rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm ${focusRing}`}
+          title="New Review Run"
+          aria-label="New Review Run"
+          className={`${
+            collapsed
+              ? 'w-9 h-9 p-0 justify-center'
+              : 'w-full py-2 px-3 justify-center'
+          } bg-white hover:bg-white/90 text-black rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer shadow-sm ${focusRing}`}
         >
-          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-          <span>New Review Run</span>
+          <Plus className="w-3.5 h-3.5 stroke-[2.5] shrink-0" />
+          {!collapsed && <span>New Review Run</span>}
         </button>
 
-        <nav className="flex flex-col gap-1 text-xs" aria-label="Main Navigation">
+        {/* Navigation Items */}
+        <nav
+          className="flex flex-col gap-1 text-xs w-full"
+          aria-label="Main Navigation"
+        >
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentSection === item.section;
             return (
               <button
                 key={item.section}
+                type="button"
                 onClick={() => onNavigate(item.section)}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left transition-all cursor-pointer ${focusRing} ${
+                title={item.label}
+                aria-label={collapsed ? `Go to ${item.label}` : item.label}
+                className={`${
+                  collapsed ? 'justify-center px-2 py-2.5' : 'justify-between px-3 py-2'
+                } w-full flex items-center rounded-xl text-left transition-all cursor-pointer ${focusRing} ${
                   isActive
                     ? 'bg-white/10 text-white font-semibold border border-white/15'
                     : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-white/50'}`} />
-                  <span>{item.label}</span>
+                <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
+                  <Icon
+                    className={`w-4 h-4 shrink-0 ${
+                      isActive ? 'text-white' : 'text-white/50'
+                    }`}
+                  />
+                  {!collapsed && <span className="truncate">{item.label}</span>}
                 </div>
-                {item.badge !== undefined && (
+                {!collapsed && item.badge !== undefined && (
                   <span
-                    className={`text-[10px] font-mono px-2 py-0.2 rounded-full ${
-                      isActive ? 'bg-white text-black font-bold' : 'bg-white/10 text-white/70'
+                    className={`text-[10px] font-mono px-2 py-0.2 rounded-full shrink-0 ${
+                      isActive
+                        ? 'bg-white text-black font-bold'
+                        : 'bg-white/10 text-white/70'
                     }`}
                   >
                     {item.badge}
@@ -99,22 +168,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      <div className="p-4 border-t border-white/10 flex flex-col gap-3">
-        <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] flex flex-col gap-1.5 text-[11px] font-mono">
-          <div className="flex justify-between text-white/50">
-            <span>Deterministic Taint</span>
-            <span className="text-emerald-400">ACTIVE</span>
+      {/* Footer Controls & Telemetry */}
+      <div className={`p-3 sm:p-4 border-t border-white/10 flex flex-col ${collapsed ? 'gap-2 items-center' : 'gap-3'}`}>
+        {!collapsed && !isMobileDrawer && (
+          <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] flex flex-col gap-1.5 text-[11px] font-mono">
+            <div className="flex justify-between text-white/50">
+              <span>Deterministic Taint</span>
+              <span className="text-emerald-400">ACTIVE</span>
+            </div>
+            <div className="flex justify-between text-white/50">
+              <span>Zero-Execution Box</span>
+              <span className="text-emerald-400">ENFORCED</span>
+            </div>
           </div>
-          <div className="flex justify-between text-white/50">
-            <span>Zero-Execution Box</span>
-            <span className="text-emerald-400">ENFORCED</span>
-          </div>
-        </div>
+        )}
 
-        <div className="text-[10.5px] text-white/40 flex justify-between items-center">
-          <span>Tenant: acme-corp</span>
-          <span className="text-white/30 font-mono">SOC2-Compliant</span>
-        </div>
+        {/* Tenant Info */}
+        {collapsed ? (
+          <div
+            className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60 text-[10px] font-mono"
+            title="Tenant: acme-corp (SOC2-Compliant)"
+          >
+            <Shield className="w-3.5 h-3.5 text-emerald-400" />
+          </div>
+        ) : (
+          <div className="text-[10.5px] text-white/40 flex justify-between items-center w-full">
+            <span className="truncate">Tenant: acme-corp</span>
+            <span className="text-white/30 font-mono shrink-0">SOC2</span>
+          </div>
+        )}
+
+        {/* Collapse / Expand Toggle Button */}
+        {onToggleCollapse && !isMobileDrawer && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label="Toggle sidebar"
+            aria-expanded={!collapsed}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={`w-full py-1.5 rounded-lg border border-white/10 bg-white/[0.03] hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center transition-colors cursor-pointer ${focusRing}`}
+          >
+            {collapsed ? (
+              <ChevronRight className="w-4 h-4" />
+            ) : (
+              <div className="flex items-center gap-1.5 text-xs">
+                <ChevronLeft className="w-4 h-4" />
+                <span>Collapse</span>
+              </div>
+            )}
+          </button>
+        )}
       </div>
     </aside>
   );

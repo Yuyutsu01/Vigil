@@ -45,6 +45,15 @@ async def lifespan(app: FastAPI):
         await create_tables()
         logger.info("Database tables created/verified")
 
+    # Log active LLM provider
+    from app.agents.llm_provider import get_provider
+    provider = get_provider(
+        settings.llm_provider,
+        api_key=settings.groq_api_key if settings.llm_provider == "groq" else settings.openai_api_key,
+        model_name=settings.llm_model_name,
+    )
+    logger.info("Active LLM provider: %s", provider.provider_name)
+
     # Phase 4 Sandbox Security & Runtime Probes [H1, H5, H6, IC10]
     app.state.sandbox_available = False
     if settings.environment == "production":

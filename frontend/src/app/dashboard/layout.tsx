@@ -7,6 +7,7 @@ import { Topbar } from '@/components/vigil/Topbar';
 import { useAuth } from '@/context/AuthContext';
 import { VigilNavSection } from '@/lib/types';
 import { MOCK_REVIEWS } from '@/data/vigilData';
+import { useModalA11y } from '@/lib/useFocusTrap';
 
 export default function DashboardLayout({
   children,
@@ -17,6 +18,42 @@ export default function DashboardLayout({
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
   const [reviewCount] = useState(MOCK_REVIEWS.length);
+
+  // Sidebar collapse state with localStorage persistence
+  const [collapsed, setCollapsed] = useState<boolean>(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('vigil_sidebar_collapsed');
+      if (stored !== null) {
+        setCollapsed(stored === 'true');
+      } else if (typeof window !== 'undefined' && window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    } catch {
+      // Ignore localStorage errors in restricted environments
+    }
+  }, []);
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('vigil_sidebar_collapsed', String(next));
+      } catch {
+        // Ignore storage write error
+      }
+      return next;
+    });
+  };
+
+  const handleCloseMobileDrawer = () => {
+    setIsMobileDrawerOpen(false);
+  };
+
+  // WCAG focus trap & Escape listener for mobile drawer
+  const drawerRef = useModalA11y(isMobileDrawerOpen, handleCloseMobileDrawer);
 
   // Map URL paths to Sidebar navigation sections
   const getSectionFromPath = (path: string): VigilNavSection => {
@@ -46,10 +83,16 @@ export default function DashboardLayout({
       agents: '/dashboard/agents',
       settings: '/dashboard/settings',
     };
+    if (isMobileDrawerOpen) {
+      setIsMobileDrawerOpen(false);
+    }
     router.push(routeMap[section] || '/dashboard');
   };
 
   const handleNewReview = () => {
+    if (isMobileDrawerOpen) {
+      setIsMobileDrawerOpen(false);
+    }
     router.push('/dashboard/reviews/new');
   };
 
@@ -75,13 +118,45 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-black text-white overflow-hidden font-sans">
-      {/* Persistent Left Sidebar */}
-      <Sidebar
-        currentSection={currentSection}
-        onNavigate={handleNavigate}
-        onNewReview={handleNewReview}
-        reviewCount={reviewCount}
-      />
+      {/* Desktop Persistent Left Sidebar (hidden on mobile < 640px) */}
+      <div className="hidden sm:flex h-full">
+        <Sidebar
+          currentSection={currentSection}
+          onNavigate={handleNavigate}
+          onNewReview={handleNewReview}
+          reviewCount={reviewCount}
+          collapsed={collapsed}
+          onToggleCollapse={handleToggleCollapse}
+        />
+      </div>
+
+      {/* Mobile Drawer Overlay (< 640px) */}
+      {isMobileDrawerOpen && (
+        <div
+          className="sm:hidden fixed inset-0 z-50 flex bg-black/80 backdrop-blur-sm transition-opacity"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation drawer"
+        >
+          <div ref={drawerRef} className="h-full">
+            <Sidebar
+              currentSection={currentSection}
+              onNavigate={handleNavigate}
+              onNewReview={handleNewReview}
+              reviewCount={reviewCount}
+              collapsed={false}
+              isMobileDrawer={true}
+              onCloseMobileDrawer={handleCloseMobileDrawer}
+            />
+          </div>
+          {/* Backdrop click dismiss */}
+          <div
+            className="flex-1 h-full cursor-pointer"
+            onClick={handleCloseMobileDrawer}
+            aria-hidden="true"
+          />
+        </div>
+      )}
 
       {/* Main Operations Container */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -89,6 +164,8 @@ export default function DashboardLayout({
         <Topbar
           onBackToMarketing={handleBackToMarketing}
           title={getTitleFromSection(currentSection)}
+          onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)}
+          isMobileDrawerOpen={isMobileDrawerOpen}
         />
 
         {/* Dynamic Nested Page Content */}

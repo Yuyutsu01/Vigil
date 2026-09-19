@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import { BrandLogos } from '@/components/landing/BrandLogos';
@@ -11,16 +12,16 @@ import { AgentInsightsSection } from '@/components/landing/AgentInsightsSection'
 import { CelestialCTASection } from '@/components/landing/CelestialCTASection';
 import { Footer } from '@/components/landing/Footer';
 import { DemoModal } from '@/components/landing/DemoModal';
-import { GetStartedModal } from '@/components/landing/GetStartedModal';
 
 export default function LandingPage() {
-  // Modal states for live demo terminal and SDK get started dialog
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [isGetStartedModalOpen, setIsGetStartedModalOpen] = useState(false);
+  const router = useRouter();
 
-  // Handlers for modal interactions
+  // Modal state for interactive live demo terminal simulation
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
+  // Handlers for interactions
   const handleOpenDemo = () => setIsDemoModalOpen(true);
-  const handleOpenGetStarted = () => setIsGetStartedModalOpen(true);
+  const handleGetStarted = () => router.push('/register');
 
   // Smooth scroll dispatching for anchor links
   const handleLinkClick = (item: string) => {
@@ -50,43 +51,43 @@ export default function LandingPage() {
   return (
     <div className="relative min-h-screen bg-black text-white selection:bg-white selection:text-black">
       {/* 1. Fixed Top Navigation Bar */}
-      <Navbar onGetStarted={handleOpenGetStarted} onLinkClick={handleLinkClick} />
+      <Navbar onGetStarted={handleGetStarted} onLinkClick={handleLinkClick} />
 
       {/* Main content landmark for WCAG 2.1 AA landmark-one-main compliance */}
       <main id="main-content">
         {/* 2. Screen-Fit 3D Hero with Particle Vortex */}
-        <Hero onGetStarted={handleOpenGetStarted} onRequestDemo={handleOpenDemo} />
+        <Hero onGetStarted={handleGetStarted} onRequestDemo={handleOpenDemo} />
 
         {/* 3. Verified Platform Integrations Strip */}
         <BrandLogos />
 
         {/* 4. Primary Mission Statement, Capabilities & Empirical Benchmarks (#about, #features, #benchmarks) */}
         <ContentSections
-          onOpenGetStarted={handleOpenGetStarted}
+          onOpenGetStarted={handleGetStarted}
           onOpenDemo={handleOpenDemo}
         />
 
         {/* 5. Pipeline Execution Engine (#execution) */}
         <StatefulExecutionSection
-          onGetStarted={handleOpenGetStarted}
+          onGetStarted={handleGetStarted}
           onRequestDemo={handleOpenDemo}
         />
 
         {/* 6. Verification & CI/CD Governance (#verification) */}
         <DurableAutonomySection
-          onGetStarted={handleOpenGetStarted}
+          onGetStarted={handleGetStarted}
           onRequestDemo={handleOpenDemo}
         />
 
         {/* 7. Multi-Agent Fleet Telemetry with 14-Agent Math Breakdown (#insights) */}
         <AgentInsightsSection
-          onGetStarted={handleOpenGetStarted}
+          onGetStarted={handleGetStarted}
           onRequestDemo={handleOpenDemo}
         />
 
         {/* 8. Celestial CTA Section (#cta) */}
         <CelestialCTASection
-          onGetStarted={handleOpenGetStarted}
+          onGetStarted={handleGetStarted}
           onRequestDemo={handleOpenDemo}
         />
       </main>
@@ -95,17 +96,13 @@ export default function LandingPage() {
       <Footer
         onLinkClick={handleLinkClick}
         onRequestDemo={handleOpenDemo}
-        onGetStarted={handleOpenGetStarted}
+        onGetStarted={handleGetStarted}
       />
 
-      {/* Interactive Modals */}
+      {/* Interactive Simulation Terminal Modal */}
       <DemoModal
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}
-      />
-      <GetStartedModal
-        isOpen={isGetStartedModalOpen}
-        onClose={() => setIsGetStartedModalOpen(false)}
       />
     </div>
   );

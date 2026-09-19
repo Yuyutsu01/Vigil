@@ -63,6 +63,7 @@ class ReviewRunResponse(BaseModel):
     findings: List[FindingSchema] = Field(default_factory=list)
     finding_count: int = 0
     timing_ms: Optional[int] = None
+    source_text: Optional[str] = None
 
     model_config = {"from_attributes": True}
 

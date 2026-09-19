@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   FileCode,
   Upload,
@@ -8,22 +9,24 @@ import {
   Play,
   RotateCcw,
   Sparkles,
+  Loader2,
 } from 'lucide-react';
 import { Finding, Review, ReviewStatus } from '@/lib/types';
 import { RunStatusStepper } from './RunStatusStepper';
-import { SAMPLE_PYTHON_CODE, SAMPLE_TYPESCRIPT_CODE } from '@/data/vigilData';
+import { api } from '@/lib/api';
 import { focusRing } from '@/lib/styles';
 
 interface NewReviewViewProps {
-  onCreateReview: (newReview: Review, newFindings?: Finding[]) => void;
+  onCreateReview?: (newReview: Review, newFindings?: Finding[]) => void;
   onCancel: () => void;
 }
 
 export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, onCancel }) => {
+  const router = useRouter();
   const [language, setLanguage] = useState<'python' | 'javascript' | 'typescript'>('python');
   const [inputMethod, setInputMethod] = useState<'paste' | 'upload'>('paste');
-  const [code, setCode] = useState(SAMPLE_PYTHON_CODE);
-  const [fileName, setFileName] = useState('src/app.py');
+  const [code, setCode] = useState('');
+  const [fileName, setFileName] = useState('main.py');
   const [policyProfile, setPolicyProfile] = useState<
     'Default Policy' | 'Strict OWASP & CWE' | 'Custom Enterprise Guard'
   >('Strict OWASP & CWE');
@@ -31,18 +34,16 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
   const [isSimulating, setIsSimulating] = useState(false);
   const [currentStep, setCurrentStep] = useState<ReviewStatus>('queued');
   const [isIdempotentReplay, setIsIdempotentReplay] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleLanguageChange = (newLang: 'python' | 'javascript' | 'typescript') => {
     setLanguage(newLang);
     if (newLang === 'python') {
-      setCode(SAMPLE_PYTHON_CODE);
-      setFileName('src/app.py');
+      setFileName('main.py');
     } else if (newLang === 'typescript') {
-      setCode(SAMPLE_TYPESCRIPT_CODE);
-      setFileName('src/auth.ts');
+      setFileName('index.ts');
     } else {
-      setCode('// Paste your Node.js or JavaScript snippet here\nfunction handleUser(req, res) {\n  // ...\n}');
-      setFileName('src/server.js');
+      setFileName('server.js');
     }
   };
 
@@ -63,64 +64,52 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
     reader.readAsText(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim() || !consent) return;
 
     setIsSimulating(true);
-    setCurrentStep('queued');
+    setCurrentStep('running');
+    setSubmitError(null);
 
-    const steps: ReviewStatus[] = [
-      'queued',
-      'parsing',
-      'baseline_rules',
-      'llm_security',
-      'triage',
-      'complete',
-    ];
+    try {
+      const response = await api.submitReview({
+        language,
+        source_code: code,
+        source_text: code,
+      });
 
-    let idx = 0;
-    const interval = setInterval(() => {
-      idx += 1;
-      if (idx < steps.length) {
-        setCurrentStep(steps[idx]);
-      } else {
-        clearInterval(interval);
-        const created: Review = {
-          id: `rev-${Date.now().toString().slice(-4)}`,
-          runId: `run-${Date.now().toString().slice(-6)}`,
-          title: `${fileName} Security Audit`,
+      if (onCreateReview) {
+        onCreateReview({
+          id: response.run_id,
+          runId: response.run_id,
+          title: `${language.toUpperCase()} Security Review`,
           fileName,
           language,
-          status: 'complete',
+          status: response.status,
           createdAt: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
           fileCount: 1,
-          totalFindings: 4,
-          severityCounts: {
-            critical: 2,
-            high: 1,
-            medium: 1,
-            low: 0,
-            info: 0,
-          },
+          totalFindings: 0,
+          severityCounts: { critical: 0, high: 0, medium: 0, low: 0, info: 0 },
           budget: {
-            tokensUsed: 12400,
+            tokensUsed: 0,
             tokenLimit: 25000,
-            costUsed: 0.24,
-            costLimit: 1.5,
-            iterations: 9,
+            costUsed: 0,
+            costLimit: 5.0,
+            iterations: 0,
             iterationLimit: 20,
           },
-          deadlineAt: '5m remaining',
           legalHold: false,
           policyProfile,
           code,
-        };
-        setIsSimulating(false);
-        onCreateReview(created);
+        });
       }
-    }, 450);
+
+      router.push(`/dashboard/reviews/${response.run_id}`);
+    } catch (err: any) {
+      setIsSimulating(false);
+      setSubmitError(err?.message || 'Failed to submit review');
+    }
   };
 
   return (
@@ -153,6 +142,19 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
           <button
             onClick={() => setIsIdempotentReplay(false)}
             className="text-xs text-white/60 hover:text-white underline cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {submitError && (
+        <div className="p-3.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-xs text-rose-300 flex items-center justify-between">
+          <span>{submitError}</span>
+          <button
+            type="button"
+            onClick={() => setSubmitError(null)}
+            className="text-xs text-rose-300 hover:text-white underline cursor-pointer"
           >
             Dismiss
           </button>
@@ -339,9 +341,9 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
             </button>
             <button
               type="submit"
-              disabled={!code.trim() || !consent}
+              disabled={!code.trim() || !consent || isSimulating}
               className={`px-5 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer ${focusRing} ${
-                !code.trim() || !consent
+                !code.trim() || !consent || isSimulating
                   ? 'bg-white/10 text-white/30 cursor-not-allowed border border-white/10'
                   : 'bg-white hover:bg-white/90 text-black shadow-sm'
               }`}

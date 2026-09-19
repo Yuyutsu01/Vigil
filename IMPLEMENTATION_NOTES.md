@@ -503,4 +503,35 @@ User disposition comment sanitization was initially located in `backend/app/serv
 - Created `frontend/src/components/LearningConsentBanner.tsx` and `frontend/src/components/AgentTreeVisualization.tsx`. Both components are fully implemented, WCAG 2.1 AA compliant, and handle API state transitions (`POST /v1/consent/learning` and `GET /v1/reviews/{id}/agent-tree`).
 - **Deferred to Phase 6:** End-to-end browser test automation suites (Playwright/Cypress) and full management console integration are explicitly deferred to Phase 6. All backend API contracts, security gates, and audit trails required by SRS §14 are 100% complete and verified.
 
+---
+
+## [N51] Real Dashboard Stats Aggregation
+
+Dashboard statistics are dynamically computed in real time via `GET /v1/tenants/me/stats`:
+- Queries `review_runs` scoped strictly to the authenticated `tenant_id`.
+- Aggregates findings grouped by severity (`Critical`, `High`, `Medium`, `Low`, `Info`).
+- Sums token spend across `agent_coordination_runs` and computes estimated cost ($0.000002/token).
+- Computes average turnaround duration in milliseconds from `started_at` to `completed_at`.
+- Calculates week-over-week trends comparing current 7 days vs previous 7 days.
+- Rate-limited via tenant middleware at 60 req/min. Empty tenants display an onboarding banner: `"No reviews yet — submit your first to see stats."`.
+
+---
+
+## [N52] Groq Live LLM Provider and Fallback Behavior
+
+- Groq (`groq>=0.11.0`) is the live LLM provider for Vigil (`llama-3.3-70b-versatile` by default).
+- Implemented via `AsyncGroq` in `backend/app/agents/llm_provider.py` with strict JSON mode formatting (`response_format={"type": "json_object"}`).
+- Fallback behavior: If `VIGIL_LLM_PROVIDER=groq` but `GROQ_API_KEY` is not provided, the factory logs a warning and falls back safely to `MockProvider()`.
+- Mock mode remains fully supported for offline development and deterministic acceptance testing.
+- Note: Groq free tier has TPM rate limits — see https://console.groq.com/docs/rate-limits.
+
+---
+
+## [N53] Collapsible Sidebar & Responsive Drawer
+
+- The SecOps sidebar in `frontend/src/components/vigil/Sidebar.tsx` supports collapsible state (collapsing from 240px to 64px icon-only navigation).
+- User collapse preference is persisted to `localStorage` under `'vigil_sidebar_collapsed'` and restored on mount.
+- On viewports < 768px, sidebar defaults to collapsed. On viewports < 640px, the static sidebar is hidden and accessible via a topbar hamburger menu that opens a WCAG 2.1 AA compliant overlay drawer with focus trap and Escape key dismissal via `useModalA11y`.
+
+
 

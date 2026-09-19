@@ -36,4 +36,6 @@ cryptography==43.0.1
 # Phase 4 (M4) Patch Generation & Sandbox Validation
 docker==7.2.0
 packaging>=23.0
+# Phase 5 Live LLM Provider
+groq>=0.11.0
 

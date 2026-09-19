@@ -21,6 +21,21 @@ export interface LoginResponse {
   role?: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  organization_name: string;
+}
+
+export interface RegisterResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  tenant_id: string;
+  user_id: string;
+  role: string;
+}
+
 export interface TokenPayload {
   sub: string;
   tenant_id: string;
@@ -58,6 +73,8 @@ export type FindingDisposition = 'accepted' | 'rejected' | 'false_positive';
 
 export type ReviewStatus =
   | 'queued'
+  | 'pending'
+  | 'running'
   | 'parsing'
   | 'parsing_ast'
   | 'baseline_rules'
@@ -71,10 +88,12 @@ export type ReviewStatus =
   | 'completed'
   | 'partial'
   | 'budget_paused'
-  | 'failed';
+  | 'failed'
+  | 'deleted';
 
 export interface ReviewRequest {
   source_code: string;
+  source_text?: string;
   language: 'python' | 'javascript' | 'typescript';
   target_file_path?: string;
   manifest_files?: Record<string, string>;
@@ -83,6 +102,12 @@ export interface ReviewRequest {
 export interface ReviewRunResponse {
   run_id: string;
   status: ReviewStatus;
+  language?: string;
+  findings?: any[];
+  finding_count?: number;
+  source_text?: string | null;
+  started_at?: string;
+  completed_at?: string;
 }
 
 export interface BudgetStats {
@@ -111,6 +136,7 @@ export interface Review {
   code: string;
   fileName: string;
   policyProfile: 'Default Policy' | 'Strict OWASP & CWE' | 'Custom Enterprise Guard';
+  findings?: Finding[];
 }
 
 export interface Finding {
@@ -501,8 +527,22 @@ export interface PurgeResponse {
 }
 
 // ==========================================
-// Console View & Navigation Types
-// ==========================================
+export interface TenantStats {
+  total_reviews: number;
+  total_findings: number;
+  findings_by_severity: {
+    Critical: number;
+    High: number;
+    Medium: number;
+    Low: number;
+    Info: number;
+  };
+  total_tokens_used: number;
+  total_cost_usd: number;
+  avg_review_duration_ms: number;
+  reviews_last_7_days: number;
+  reviews_previous_7_days: number;
+}
 
 export interface ReviewStats {
   totalReviews: number;

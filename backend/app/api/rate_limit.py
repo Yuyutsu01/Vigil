@@ -18,7 +18,7 @@ from app.redis_client import get_redis
 
 logger = logging.getLogger(__name__)
 
-_EXEMPT_PATHS = {"/health", "/v1/auth/token", "/v1/auth/login", "/docs", "/openapi.json"}
+_EXEMPT_PATHS = {"/health", "/v1/auth/token", "/v1/auth/login", "/v1/auth/register", "/docs", "/openapi.json"}
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

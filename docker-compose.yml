@@ -45,10 +45,13 @@ services:
       JWT_SECRET_KEY: "${JWT_SECRET_KEY:-CHANGE_ME_IN_PRODUCTION}"
       VIGIL_ENV: "${VIGIL_ENV:-development}"
       VIGIL_LLM_PROVIDER: "${VIGIL_LLM_PROVIDER:-mock}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
       OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
       VIGIL_CORS_ORIGINS: "http://localhost:3000"
     ports:
       - "8000:8000"
+    volumes:
+      - ./prompts:/prompts:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,9 +76,13 @@ services:
       DATABASE_URL: "postgresql+asyncpg://vigil:vigil@postgres:5432/vigil"
       REDIS_URL: "redis://redis:6379/0"
       VIGIL_ENV: "${VIGIL_ENV:-development}"
+      VIGIL_LLM_PROVIDER: "${VIGIL_LLM_PROVIDER:-mock}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
       GITHUB_APP_ID: "${GITHUB_APP_ID:-}"
       GITHUB_APP_PRIVATE_KEY_PATH: "${GITHUB_APP_PRIVATE_KEY_PATH:-}"
       GITHUB_APP_WEBHOOK_SECRET: "${GITHUB_APP_WEBHOOK_SECRET:-}"
+    volumes:
+      - ./prompts:/prompts:ro
     depends_on:
       postgres:
         condition: service_healthy
