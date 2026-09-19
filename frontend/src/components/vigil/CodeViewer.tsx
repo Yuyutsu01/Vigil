@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Copy, Check, FileCode } from 'lucide-react';
+import { Copy, Check, FileCode, Maximize } from 'lucide-react';
 import { Finding, Review } from '@/lib/types';
 import { focusRing } from '@/lib/styles';
 
@@ -25,6 +25,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   review,
 }) => {
   const [copied, setCopied] = React.useState(false);
+  const [selectedLang, setSelectedLang] = React.useState(language);
   const containerRef = useRef<HTMLDivElement>(null);
   const lines = code.split('\n');
 
@@ -69,12 +70,27 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
         <div className="flex items-center gap-2 font-mono text-white/70 truncate">
           <FileCode className="w-3.5 h-3.5 text-white/50" />
           <span className="font-semibold text-white truncate">{fileName}</span>
-          <span className="text-[10.5px] px-1.5 py-0.2 rounded-full bg-white/10 text-white/80 uppercase">
-            {language}
-          </span>
+          <select 
+            value={selectedLang}
+            onChange={(e) => setSelectedLang(e.target.value)}
+            className="text-[10.5px] px-1.5 py-0.5 rounded-sm bg-white/10 text-white/80 uppercase outline-none border-none cursor-pointer hover:bg-white/20 appearance-none"
+          >
+            <option value="python">PYTHON</option>
+            <option value="typescript">TYPESCRIPT</option>
+            <option value="javascript">JAVASCRIPT</option>
+            <option value="go">GO</option>
+            <option value="rust">RUST</option>
+          </select>
         </div>
         {!isRepoReview && (
           <div className="flex items-center gap-2">
+            <button
+              aria-label="Full screen"
+              className={`p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors flex items-center gap-1 text-[11px] cursor-pointer ${focusRing}`}
+              title="Toggle Full Screen"
+            >
+              <Maximize className="w-3.5 h-3.5" />
+            </button>
             <button
               onClick={handleCopy}
               aria-label={copied ? 'Copied' : 'Copy code'}

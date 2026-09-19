@@ -74,18 +74,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           } pb-2 border-b border-white/10 w-full`}
         >
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-black font-bold text-xs shadow-[0_0_12px_rgba(255,255,255,0.3)] shrink-0"
-              title="Vigil Console"
-            >
-              V
-            </div>
+            <img
+              src="/images/vigil-logo.png"
+              alt="Vigil"
+              className="w-7 h-auto shrink-0 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+            />
             {!collapsed && (
               <div>
                 <div className="font-bold tracking-widest text-xs uppercase text-white truncate">
                   VIGIL CONSOLE
                 </div>
-                <div className="text-[10px] text-white/40 font-mono">SecOps v2.4.0</div>
+
               </div>
             )}
           </div>
@@ -170,18 +169,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer Controls & Telemetry */}
       <div className={`p-3 sm:p-4 border-t border-white/10 flex flex-col ${collapsed ? 'gap-2 items-center' : 'gap-3'}`}>
-        {!collapsed && !isMobileDrawer && (
-          <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] flex flex-col gap-1.5 text-[11px] font-mono">
-            <div className="flex justify-between text-white/50">
-              <span>Deterministic Taint</span>
-              <span className="text-white/60">ACTIVE</span>
-            </div>
-            <div className="flex justify-between text-white/50">
-              <span>Zero-Execution Box</span>
-              <span className="text-white/60">ENFORCED</span>
-            </div>
-          </div>
-        )}
+
 
         {/* Tenant Info */}
         {collapsed ? (
