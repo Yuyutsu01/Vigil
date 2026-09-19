@@ -354,6 +354,64 @@ Full Test Suite Total                          All Suites & Invariants          
 
 ---
 
+## 🔌 Model Context Protocol (MCP) Integration
+
+Vigil provides a native **MCP Server** (`vigil-mcp`) allowing AI assistants (such as Claude Desktop, Cursor IDE, Windsurf, and Antigravity) to directly execute security reviews, inspect findings, and audit repositories.
+
+### Quickstart
+
+```bash
+# 1. Install MCP package in editable mode
+cd mcp-server
+pip install -e .
+
+# 2. Test import
+python -c "from vigil_mcp import server; print('ok')"
+
+# 3. Test interactively with MCP Inspector
+npx @modelcontextprotocol/inspector python -m vigil_mcp
+```
+
+### Connect to Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "vigil": {
+      "command": "python",
+      "args": ["-m", "vigil_mcp"],
+      "env": {
+        "VIGIL_API_URL": "http://localhost:8000"
+      }
+    }
+  }
+}
+```
+
+### Connect to Cursor IDE
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "vigil": {
+      "command": "python",
+      "args": ["-m", "vigil_mcp"],
+      "env": {
+        "VIGIL_API_URL": "http://localhost:8000"
+      }
+    }
+  }
+}
+```
+
+See [`mcp-server/README.md`](mcp-server/README.md) for full tool references and parameters.
+
+---
+
 ## Project Directory Structure
 
 ```
@@ -387,8 +445,12 @@ Vigil/
 │   └── src/
 │       ├── components/        # AgentTreeVisualization, LearningConsentBanner, etc.
 │       └── app/               # Next.js App Router views
+├── mcp-server/                # Model Context Protocol (MCP) Server for AI Client Integration
+│   ├── vigil_mcp/             # FastMCP tools & stdio server entrypoints
+│   ├── pyproject.toml         # Package definition and dependencies
+│   └── README.md              # MCP Client connection documentation
 ├── prompts/                   # Externalized markdown system prompts (Patch, PR, Risk)
-├── tests/                     # 309+ Automated tests
+├── tests/                     # 311 Automated tests
 │   ├── acceptance/            # SRS Acceptance tests (AC-105 through AC-109)
 │   ├── integration/           # Pipeline, webhook, budget, and API tests
 │   ├── privacy/               # Consent, GDPR purge, and data isolation tests
