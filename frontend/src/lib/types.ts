@@ -135,6 +135,8 @@ export interface Review {
   legalHold: boolean;
   code: string;
   fileName: string;
+  repoFullName?: string;
+  refValue?: string;
   policyProfile: 'Default Policy' | 'Strict OWASP & CWE' | 'Custom Enterprise Guard';
   findings?: Finding[];
 }
@@ -149,6 +151,7 @@ export interface Finding {
   title: string;
   description: string;
   file: string;
+  source_file_path?: string;
   line: number;
   endLine?: number;
   column?: number;
@@ -157,7 +160,7 @@ export interface Finding {
   cwe?: string;
   ruleId?: string;
   toolName?: string;
-  evidence?: string;
+  evidence?: any;
   suggestedFix?: string;
   diffPatch?: {
     original: string[];

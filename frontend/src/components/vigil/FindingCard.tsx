@@ -53,13 +53,36 @@ export const FindingCard: React.FC<FindingCardProps> = ({ finding, isSelected, o
       </h4>
 
       <div className="flex items-center justify-between text-[11.5px] text-white/50 pt-1 border-t border-white/10 font-mono">
-        <div className="flex items-center gap-1.5 truncate">
-          <FileCode className="w-3 h-3 text-white/40 shrink-0" />
-          <span className="text-white/80 truncate">
-            {finding.file}:{finding.line}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
+        {finding.source_file_path ? (
+          <div className="text-xs text-white/60 font-mono flex items-center gap-1.5 truncate">
+            <FileCode className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{finding.source_file_path}</span>
+            {Array.isArray(finding.evidence) && finding.evidence[0]?.source_range?.start_line ? (
+              <span className="text-white/40">
+                : {finding.evidence[0].source_range.start_line}
+              </span>
+            ) : finding.line ? (
+              <span className="text-white/40">
+                : {finding.line}
+              </span>
+            ) : null}
+          </div>
+        ) : finding.file ? (
+          <div className="text-xs text-white/60 font-mono flex items-center gap-1.5 truncate">
+            <FileCode className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{finding.file}</span>
+            {finding.line ? (
+              <span className="text-white/40">
+                : {finding.line}
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="text-xs text-white/40 italic">
+            Location unavailable
+          </div>
+        )}
+        <div className="flex items-center gap-1 shrink-0">
           {finding.userFeedback?.helpful === false ? (
             <span className="text-[10.5px] text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-rose-500/20">
               <XCircle className="w-3 h-3" />

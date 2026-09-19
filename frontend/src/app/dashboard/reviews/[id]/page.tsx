@@ -8,6 +8,16 @@ import { api } from '@/lib/api';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, AlertTriangle } from 'lucide-react';
 
+function isMockFinding(finding: any) {
+  const title = (finding.title || '').toLowerCase();
+  const rationale = (finding.rationale || finding.description || '').toLowerCase();
+  return (
+    title.includes('mock llm') ||
+    title.includes('mockprovider') ||
+    rationale.includes('mockprovider')
+  );
+}
+
 export default function ReviewDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -33,8 +43,11 @@ export default function ReviewDetailPage() {
         const fetchedReview = await api.getReview(reviewId);
         if (!isMounted) return;
 
+        const cleanedFindings = (fetchedReview.findings || []).filter(
+          (f) => !isMockFinding(f)
+        );
         setReview(fetchedReview);
-        setFindings(fetchedReview.findings || []);
+        setFindings(cleanedFindings);
         setLoading(false);
 
         // If the review is still in progress, poll until completion

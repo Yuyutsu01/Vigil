@@ -149,6 +149,10 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
   const [disconnectingRepoId, setDisconnectingRepoId] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
+  // Scope selection state
+  const [scopeModalRepo, setScopeModalRepo] = useState<Repository | null>(null);
+  const [scopeMode, setScopeMode] = useState<'full_repo' | 'changed_files'>('full_repo');
+
   const loadRepos = async () => {
     setLoading(true);
     setError(null);
@@ -191,14 +195,17 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
     }
   };
 
-  const handleTriggerReview = async (repoId: string) => {
+  const handleConfirmTriggerReview = async () => {
+    if (!scopeModalRepo) return;
+    const repoId = scopeModalRepo.repository_id;
+    const branch = scopeModalRepo.default_branch || 'main';
     setError(null);
     setTriggeringRepoId(repoId);
     try {
       const response = await api.triggerRepositoryReview(repoId, {
         ref_type: 'branch',
-        ref_value: 'main',
-        scope_mode: 'changed_files',
+        ref_value: branch,
+        scope_mode: scopeMode,
       });
 
       // The backend returns review_run_id — the run_id that
@@ -209,6 +216,8 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
         setError('Review initiated but no run ID was returned. Check backend logs.');
         return;
       }
+
+      setScopeModalRepo(null);
 
       if (onSelectReview) {
         onSelectReview(runId);
@@ -388,12 +397,133 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
               <RepositoryCard
                 key={repo.repository_id}
                 repo={repo}
-                onTriggerReview={() => handleTriggerReview(repo.repository_id)}
+                onTriggerReview={() => {
+                  setScopeMode('full_repo');
+                  setScopeModalRepo(repo);
+                }}
                 onDisconnect={() => handleDisconnect(repo.repository_id)}
                 triggering={triggeringRepoId === repo.repository_id}
                 disconnecting={disconnectingRepoId === repo.repository_id}
               />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Scope Selection Modal */}
+      {scopeModalRepo && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="scope-modal-title"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div className="bg-zinc-950 border border-white/15 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5 text-white animate-in fade-in zoom-in-95 duration-150">
+            <div>
+              <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono mb-1">
+                <Github className="w-4 h-4" aria-hidden="true" />
+                <span>{scopeModalRepo.full_name || scopeModalRepo.repo_name}</span>
+              </div>
+              <h2 id="scope-modal-title" className="text-lg font-semibold text-white">
+                Trigger Security Review
+              </h2>
+              <p className="text-xs text-white/60 mt-1">
+                Select the analysis scope before launching the multi-agent security audit.
+              </p>
+            </div>
+
+            {/* Radio Options */}
+            <div className="space-y-3" role="radiogroup" aria-label="Review Scope Options">
+              {/* Option 1: Full Repository (Default) */}
+              <label
+                onClick={() => setScopeMode('full_repo')}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+                  scopeMode === 'full_repo'
+                    ? 'border-cyan-500/60 bg-cyan-500/10 ring-1 ring-cyan-500/30'
+                    : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="scope_mode"
+                  value="full_repo"
+                  checked={scopeMode === 'full_repo'}
+                  onChange={() => setScopeMode('full_repo')}
+                  className="mt-1 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-0 bg-transparent border-white/30"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-white">Full repository</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      Default
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/60 mt-0.5">
+                    Comprehensive, slower — scans all source files across the repository on branch <code className="font-mono text-cyan-300">{scopeModalRepo.default_branch || 'main'}</code>.
+                  </p>
+                </div>
+              </label>
+
+              {/* Option 2: Changed Files Only */}
+              <label
+                onClick={() => setScopeMode('changed_files')}
+                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
+                  scopeMode === 'changed_files'
+                    ? 'border-cyan-500/60 bg-cyan-500/10 ring-1 ring-cyan-500/30'
+                    : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="scope_mode"
+                  value="changed_files"
+                  checked={scopeMode === 'changed_files'}
+                  onChange={() => setScopeMode('changed_files')}
+                  className="mt-1 text-cyan-500 focus:ring-cyan-400 focus:ring-offset-0 bg-transparent border-white/30"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-white">Changed files only</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/60 border border-white/10">
+                      Fast
+                    </span>
+                  </div>
+                  <p className="text-xs text-white/60 mt-0.5">
+                    Fast, small — scans only recently modified diffs and modified files.
+                  </p>
+                </div>
+              </label>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setScopeModalRepo(null)}
+                disabled={triggeringRepoId !== null}
+                className={`px-4 py-2 rounded-lg text-xs font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50 ${focusRing}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmTriggerReview}
+                disabled={triggeringRepoId !== null}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold tracking-wide transition-all shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${focusRing}`}
+              >
+                {triggeringRepoId ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    <span>Initiating Analysis…</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
+                    <span>Start Review</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

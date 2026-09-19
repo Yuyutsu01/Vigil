@@ -118,6 +118,15 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
     });
   }, []);
 
+  const REPO_REVIEW_PLACEHOLDER = '[REPOSITORY_REVIEW_MEMORY_ONLY]';
+  const isRepoReview =
+    review.code === REPO_REVIEW_PLACEHOLDER ||
+    Boolean(review.code?.includes('REPOSITORY_REVIEW_MEMORY_ONLY'));
+
+  const displayPath = isRepoReview
+    ? (findings[0]?.source_file_path || 'Repository review')
+    : review.fileName || 'main.py';
+
   const selectedFinding = findings.find((f) => f.id === selectedFindingId) || null;
 
   const handleKeyDown = useCallback(
@@ -150,6 +159,11 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
     }
   };
 
+  const distinctFindingFiles = new Set(
+    findings.map((f) => f.source_file_path || f.file).filter(Boolean)
+  );
+  const scannedFilesCount = Math.max(review.fileCount || 1, distinctFindingFiles.size || 1);
+
   return (
     <div className="flex flex-col h-full w-full bg-black text-white select-none overflow-hidden">
       {/* Top Action Bar */}
@@ -162,7 +176,7 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
             <span className="text-white/40">/</span>
             <div className="flex items-center gap-1.5 font-medium text-xs text-white truncate max-w-xs sm:max-w-md">
               <FileCode className="w-3.5 h-3.5 text-white/70 shrink-0" />
-              <span className="truncate">{review.fileName}</span>
+              <span className="truncate">{displayPath}</span>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-2 shrink-0">
@@ -172,6 +186,9 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
             <div className="flex items-center gap-1 text-[11px] text-white/60 bg-white/[0.04] px-2.5 py-0.5 rounded-full border border-white/10">
               <Shield className="w-3 h-3 text-white/70" />
               <span>{review.policyProfile}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-mono">
+              <span>Scanned {scannedFilesCount} files with {findings.length} findings</span>
             </div>
             <button
               onClick={() => setLegalHold(!legalHold)}
@@ -236,10 +253,11 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
           <CodeViewer
             code={review.code}
             language={review.language}
-            fileName={review.fileName}
+            fileName={displayPath}
             findings={findings}
             selectedFindingId={selectedFindingId}
             onSelectFinding={(id) => setSelectedFindingId(id)}
+            review={review}
           />
         </div>
 

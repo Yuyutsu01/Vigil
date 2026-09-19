@@ -94,38 +94,10 @@ class MockProvider(ModelProvider):
                 ],
             )
 
-        # Derive a deterministic seed from the prompt
-        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
-        seed_int = int(prompt_hash[:8], 16)
-
-        # Produce zero findings for clean code, one advisory finding for any code
-        # The presence of <<<SOURCE_START>>> marker confirms this is a real analysis call
-        if "<<<SOURCE_START>>>" not in prompt:
-            return RawLLMResponse(findings=[])
-
-        # Extract a snippet of source code between delimiters for context
-        try:
-            start_idx = prompt.index("<<<SOURCE_START>>>") + len("<<<SOURCE_START>>>")
-            end_idx = prompt.index("<<<SOURCE_END>>>")
-            source_snippet = prompt[start_idx:end_idx].strip()[:100]
-        except ValueError:
-            source_snippet = ""
-
-        # Deterministic: same source_snippet hash → same findings
-        source_hash = hashlib.sha256(source_snippet.encode("utf-8")).hexdigest()
-
-        # Return a minimal but valid finding to satisfy schema
-        finding = RawLLMFinding(
-            rule_id=f"LLM-SEC-{seed_int % 900 + 100:03d}",
-            category="security",
-            severity=Severity.info,
-            confidence=0.50,
-            title="Mock LLM analysis complete (no real findings in mock mode)",
-            rationale=f"MockProvider produced deterministic output for source hash {source_hash[:8]}.",
-            remediation="Switch to a live LLM provider for real security analysis.",
-            evidence_kind=EvidenceKind.llm_reasoning,
-        )
-        return RawLLMResponse(findings=[finding])
+        # Mock mode is a deterministic no-op for the LLM layer.
+        # Real findings come from the deterministic rule engine and
+        # the static tool adapters (Bandit, Semgrep, Ruff, ESLint).
+        return RawLLMResponse(findings=[])
 
 
 class GroqProvider(ModelProvider):
