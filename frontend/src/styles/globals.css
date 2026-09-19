@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg: #000;
+    --fg: #fff;
+    --background: #000000;
+    --foreground: #ecebe7;
+    --muted: rgba(255, 255, 255, 0.62);
+    --muted-foreground: #757168;
+    --line: rgba(255, 255, 255, 0.14);
+    --pill: rgba(255, 255, 255, 0.28);
+    --border: #101215;
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* WCAG 2.1 AA Keyboard Focus Visibility (NFR-007) */
+  :focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid #22d3ee !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* ============================================================
+   Star button animation
+   The glow div travels along --path (a border-shaped offset-path)
+   over --duration seconds, looping forever.
+   ============================================================ */
+@keyframes star-btn {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 40s linear infinite;
+  }
+
+  .animate-star-btn {
+    animation: star-btn calc(var(--duration, 3) * 1s) linear infinite;
+    offset-rotate: 0deg;
+    will-change: offset-distance;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Shimmer animation for secondary headline line */
+@keyframes shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+.text-shimmer {
+  background: linear-gradient(90deg, #8e8e8e, #fff, #8e8e8e);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+/* Pulsing square diamond brand mark */
+@keyframes pulse-mark {
+  0%, 100% {
+    opacity: 0.55;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 18px rgba(255, 255, 255, 0.6);
+  }
+}
+
+.animate-pulse-mark {
+  animation: pulse-mark 3.2s ease-in-out infinite;
+}
+
+/* Vignette radial overlay matching the engine spec */
+.vortex-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 45% closest-side at 50% 42%, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 62%),
+    radial-gradient(120% 90% closest-side at 50% 50%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.85) 100%);
+}
+
+/* Logo strip mask */
+.logo-strip-mask {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

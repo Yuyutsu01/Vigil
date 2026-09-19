@@ -126,12 +126,17 @@ app.state.sandbox_available = True
 #   5. Endpoint dependencies & handlers (get_auth_context validates and enforces authorization)
 #
 # Response path order is the reverse of request path order.
+cors_list = list(settings.cors_origins) if isinstance(settings.cors_origins, list) else [settings.cors_origins]
+for origin in ["http://localhost:3000", "http://127.0.0.1:3000"]:
+    if origin not in cors_list:
+        cors_list.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=cors_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Tenant-Hint"],
+    allow_methods=["*"],
+    allow_headers=["*"],
     expose_headers=["X-Vigil-Idempotent", "Retry-After"],
 )
 app.add_middleware(IdempotencyMiddleware)

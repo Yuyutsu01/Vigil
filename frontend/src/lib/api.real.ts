@@ -1,0 +1,438 @@
+/**
+ * Vigil Production HTTP Client
+ * Integrates directly with FastAPI backend at /v1.
+ * Enforces X-Idempotency-Key on mutating actions, X-Tenant-Hint routing, and typed error handling.
+ */
+
+import {
+  LoginRequest,
+  LoginResponse,
+  TokenPayload,
+  ReviewRequest,
+  ReviewRunResponse,
+  AgentTreeResponse,
+  FindingFeedbackRequest,
+  FindingFeedbackResponse,
+  Patch,
+  ValidationResult,
+  ValidationStatus,
+  ApplyPatchRequest,
+  ApplyPatchResponse,
+  Repository,
+  RepositoryPolicy,
+  CostPreviewRequest,
+  CostPreviewResponse,
+  RepositoryReviewStatus,
+  DraftPRReview,
+  BaseConsentRequest,
+  BaseConsentResponse,
+  LearningConsentResponse,
+  PurgeResponse,
+  ApiErrorResponse,
+  Review,
+  Finding,
+} from './types';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+/**
+ * Generate a cryptographically random UUID v4 for request idempotency.
+ * Generated once per user action (button click/form submit) and reused on retry.
+ */
+export function idempotencyKey(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Helper to decode JWT payload without external dependencies.
+ */
+export function decodeTokenPayload(token: string): TokenPayload | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    return JSON.parse(atob(parts[1]));
+  } catch {
+    return null;
+  }
+}
+
+interface RequestOptions extends RequestInit {
+  idempotencyKey?: string;
+  skipAuth?: boolean;
+}
+
+/**
+ * Core fetch wrapper managing headers, tenant hints, idempotency, and error parsing.
+ */
+async function apiFetch<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const url = `${BASE_URL}${endpoint}`;
+  const headers = new Headers(options.headers || {});
+
+  // 1. Bearer Token Injection
+  if (!options.skipAuth) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vigil_token') : null;
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
+
+      // 2. X-Tenant-Hint Injection derived strictly from decoded JWT payload
+      const payload = decodeTokenPayload(token);
+      if (payload?.tenant_id) {
+        headers.set('X-Tenant-Hint', payload.tenant_id);
+      }
+    }
+  }
+
+  // 3. X-Idempotency-Key Injection for mutating requests
+  if (options.idempotencyKey) {
+    headers.set('X-Idempotency-Key', options.idempotencyKey);
+  }
+
+  // 4. Content-Type default (if not raw binary or FormData)
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData) && !(options.body instanceof Blob)) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  // Check for idempotency replay header from backend
+  if (response.headers.get('X-Vigil-Idempotent') === 'true') {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('vigil:toast', {
+          detail: { message: 'This action was already completed.', type: 'info' },
+        })
+      );
+    }
+  }
+
+  // Handle 401 Unauthorized globally
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('vigil_token');
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && !currentPath.startsWith('/auth')) {
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      }
+    }
+    throw new Error('Authentication session expired. Please sign in again.');
+  }
+
+  if (response.status === 204) {
+    return undefined as unknown as T;
+  }
+
+  if (!response.ok) {
+    let errorData: ApiErrorResponse;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = {
+        detail: {
+          code: 'unknown_error',
+          message: `Server returned error status ${response.status} (${response.statusText})`,
+        },
+        correlation_id: crypto.randomUUID(),
+      };
+    }
+
+    const err = new Error(errorData.detail.message || 'An unexpected API error occurred');
+    (err as unknown as { errorResponse: ApiErrorResponse }).errorResponse = errorData;
+    throw err;
+  }
+
+  return response.json() as Promise<T>;
+}
+
+// ==========================================
+// Exported Real API Client Methods
+// ==========================================
+
+export const realApi = {
+  // Authentication
+  async login(credentials: LoginRequest, idempKey?: string): Promise<LoginResponse> {
+    return apiFetch<LoginResponse>('/v1/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+      skipAuth: true,
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  // Base Consent & Governed Learning
+  async recordConsent(data: BaseConsentRequest, idempKey?: string): Promise<BaseConsentResponse> {
+    return apiFetch<BaseConsentResponse>('/v1/consent', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async updateLearningConsent(
+    granted: boolean,
+    idempKey?: string
+  ): Promise<{ granted: boolean; purged_count?: number }> {
+    return apiFetch<{ granted: boolean; purged_count?: number }>('/v1/consent/learning', {
+      method: 'POST',
+      body: JSON.stringify({ granted }),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async getLearningConsentStatus(): Promise<LearningConsentResponse> {
+    return apiFetch<LearningConsentResponse>('/v1/consent/learning/status', { method: 'GET' });
+  },
+
+  async purgeTenantLearningData(idempKey?: string): Promise<PurgeResponse> {
+    return apiFetch<PurgeResponse>('/v1/tenants/me/learning-data', {
+      method: 'DELETE',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  // Code Reviews & Uploads
+  async uploadBinary(
+    binaryData: Blob | ArrayBuffer,
+    contentType:
+      | 'application/x-python'
+      | 'text/x-python'
+      | 'text/javascript'
+      | 'application/javascript'
+      | 'application/typescript'
+      | 'text/typescript',
+    idempKey?: string
+  ): Promise<ReviewRunResponse> {
+    return apiFetch<ReviewRunResponse>('/v1/uploads', {
+      method: 'POST',
+      body: binaryData,
+      headers: {
+        'Content-Type': contentType,
+      },
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async submitReview(data: ReviewRequest, idempKey?: string): Promise<ReviewRunResponse> {
+    return apiFetch<ReviewRunResponse>('/v1/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async getReview(runId: string): Promise<Review> {
+    return apiFetch<Review>(`/v1/reviews/${runId}`, { method: 'GET' });
+  },
+
+  async deleteReview(runId: string, idempKey?: string): Promise<void> {
+    return apiFetch<void>(`/v1/reviews/${runId}`, {
+      method: 'DELETE',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async downloadReviewReport(runId: string, format: 'json' | 'html' | 'pdf'): Promise<Blob> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vigil_token') : null;
+    const res = await fetch(`${BASE_URL}/v1/reviews/${runId}/report?format=${format}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to generate compliance report');
+    return res.blob();
+  },
+
+  async downloadExecutiveReport(runId: string): Promise<Blob> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vigil_token') : null;
+    const res = await fetch(`${BASE_URL}/v1/reviews/${runId}/report/executive.pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Failed to download executive summary');
+    return res.blob();
+  },
+
+  async getAgentTree(runId: string): Promise<AgentTreeResponse> {
+    return apiFetch<AgentTreeResponse>(`/v1/reviews/${runId}/agent-tree`, { method: 'GET' });
+  },
+
+  async getToolFindings(runId: string): Promise<Finding[]> {
+    return apiFetch<Finding[]>(`/v1/reviews/${runId}/tool-findings`, { method: 'GET' });
+  },
+
+  // Findings Feedback
+  async submitFindingFeedback(
+    findingId: string,
+    data: FindingFeedbackRequest,
+    idempKey?: string
+  ): Promise<FindingFeedbackResponse> {
+    return apiFetch<FindingFeedbackResponse>(
+      `/v1/findings/${findingId}/feedback`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+        idempotencyKey: idempKey || idempotencyKey(),
+      }
+    );
+  },
+
+  // Patches & Sandbox Validation
+  async generatePatchForFinding(
+    findingId: string,
+    idempKey?: string
+  ): Promise<{ patch_id: string; status: string }> {
+    return apiFetch<{ patch_id: string; status: string }>(`/v1/findings/${findingId}/patches`, {
+      method: 'POST',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async listPatchesForFinding(findingId: string): Promise<Patch[]> {
+    return apiFetch<Patch[]>(`/v1/findings/${findingId}/patches`, { method: 'GET' });
+  },
+
+  async approvePatch(patchId: string, idempKey?: string): Promise<{ patch_id: string; status: string }> {
+    return apiFetch<{ patch_id: string; status: string }>(`/v1/patches/${patchId}/approve`, {
+      method: 'POST',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async validatePatch(patchId: string, idempKey?: string): Promise<ValidationResult> {
+    return apiFetch<ValidationResult>(`/v1/patches/${patchId}/validate`, {
+      method: 'POST',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async applyPatch(
+    patchId: string,
+    data: ApplyPatchRequest,
+    idempKey?: string
+  ): Promise<ApplyPatchResponse> {
+    return apiFetch<ApplyPatchResponse>(`/v1/patches/${patchId}/apply`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async withdrawPatch(patchId: string, idempKey?: string): Promise<{ patch_id: string; status: string }> {
+    return apiFetch<{ patch_id: string; status: string }>(`/v1/patches/${patchId}/withdraw`, {
+      method: 'POST',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  // Repositories & CI/CD PR Gates
+  async connectRepository(
+    data: { repo_name: string; default_branch?: string },
+    idempKey?: string
+  ): Promise<Repository> {
+    return apiFetch<Repository>('/v1/repositories/connect', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async listRepositories(): Promise<Repository[]> {
+    return apiFetch<Repository[]>('/v1/repositories', { method: 'GET' });
+  },
+
+  async getRepository(repoId: string): Promise<Repository> {
+    return apiFetch<Repository>(`/v1/repositories/${repoId}`, { method: 'GET' });
+  },
+
+  async updateRepositoryPolicy(
+    repoId: string,
+    policy: Partial<RepositoryPolicy>,
+    idempKey?: string
+  ): Promise<RepositoryPolicy> {
+    return apiFetch<RepositoryPolicy>(`/v1/repositories/${repoId}/policy`, {
+      method: 'PATCH',
+      body: JSON.stringify(policy),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async disconnectRepository(repoId: string, idempKey?: string): Promise<{ status: string; repository_id: string }> {
+    return apiFetch<{ status: string; repository_id: string }>(
+      `/v1/repositories/${repoId}/disconnect`,
+      {
+        method: 'DELETE',
+        idempotencyKey: idempKey || idempotencyKey(),
+      }
+    );
+  },
+
+  async previewCost(
+    repoId: string,
+    data: CostPreviewRequest,
+    idempKey?: string
+  ): Promise<CostPreviewResponse> {
+    return apiFetch<CostPreviewResponse>(`/v1/repositories/${repoId}/cost-preview`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async triggerRepositoryReview(
+    repoId: string,
+    idempKey?: string
+  ): Promise<{ review_id: string; status: string }> {
+    return apiFetch<{ review_id: string; status: string }>(`/v1/repositories/${repoId}/reviews`, {
+      method: 'POST',
+      idempotencyKey: idempKey || idempotencyKey(),
+    });
+  },
+
+  async getRepositoryReviewStatus(repoId: string, reviewId: string): Promise<RepositoryReviewStatus> {
+    return apiFetch<RepositoryReviewStatus>(
+      `/v1/repositories/${repoId}/reviews/${reviewId}/status`,
+      { method: 'GET' }
+    );
+  },
+
+  async generateDraftPRReview(
+    repoId: string,
+    reviewId: string,
+    idempKey?: string
+  ): Promise<{ draft_id: string; status: string }> {
+    return apiFetch<{ draft_id: string; status: string }>(
+      `/v1/repositories/${repoId}/reviews/${reviewId}/generate-draft-review`,
+      {
+        method: 'POST',
+        idempotencyKey: idempKey || idempotencyKey(),
+      }
+    );
+  },
+
+  async getDraftPRReview(repoId: string, reviewId: string): Promise<DraftPRReview> {
+    return apiFetch<DraftPRReview>(
+      `/v1/repositories/${repoId}/reviews/${reviewId}/draft-review`,
+      { method: 'GET' }
+    );
+  },
+
+  async publishPRReview(
+    repoId: string,
+    reviewId: string,
+    data: { comment_ids?: string[] },
+    idempKey?: string
+  ): Promise<{ published_count: number; github_review_id: string }> {
+    return apiFetch<{ published_count: number; github_review_id: string }>(
+      `/v1/repositories/${repoId}/reviews/${reviewId}/publish-review`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+        idempotencyKey: idempKey || idempotencyKey(),
+      }
+    );
+  },
+
+  // Health
+  async checkHealth(): Promise<{ status: string }> {
+    return apiFetch<{ status: string }>('/health', { method: 'GET', skipAuth: true });
+  },
+};
