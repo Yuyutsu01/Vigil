@@ -190,10 +190,6 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
                     <span className="text-[10px] font-mono px-1.5 rounded bg-white/10 text-white/70">3</span>
                   </button>
                   <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-white/50" />
-                    <span>Compliance Dossiers</span>
-                  </button>
-                  <button className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-white/5 hover:text-white text-left transition-colors">
                     <Target className="w-3.5 h-3.5 text-white/50" />
                     <span>Benchmark Bench</span>
                   </button>

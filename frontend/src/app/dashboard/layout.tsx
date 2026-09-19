@@ -61,7 +61,6 @@ export default function DashboardLayout({
     if (path.includes('/dashboard/reviews')) return 'reviews';
     if (path.includes('/dashboard/github')) return 'github';
     if (path.includes('/dashboard/patches')) return 'patches';
-    if (path.includes('/dashboard/compliance')) return 'compliance';
     if (path.includes('/dashboard/evaluation')) return 'evaluation';
     if (path.includes('/dashboard/agents')) return 'agents';
     if (path.includes('/dashboard/settings')) return 'settings';
@@ -78,7 +77,6 @@ export default function DashboardLayout({
       new_review: '/dashboard/reviews/new',
       github: '/dashboard/github',
       patches: '/dashboard/patches',
-      compliance: '/dashboard/compliance',
       evaluation: '/dashboard/evaluation',
       agents: '/dashboard/agents',
       settings: '/dashboard/settings',
@@ -108,7 +106,6 @@ export default function DashboardLayout({
       new_review: 'SUBMISSION STUDIO',
       github: 'GITHUB CI/CD PR GATE',
       patches: 'AUTONOMOUS PATCH VALIDATION',
-      compliance: 'COMPLIANCE & AUDIT DOSSIERS',
       evaluation: 'BENCHMARK BENCH & CWE METRICS',
       agents: '14-AGENT DAG FLEET TELEMETRY',
       settings: 'GOVERNANCE & GDPR PURGE',

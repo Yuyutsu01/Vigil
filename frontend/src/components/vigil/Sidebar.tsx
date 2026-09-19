@@ -50,7 +50,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { section: 'reviews', label: 'All Reviews', icon: FileCode, badge: reviewCount },
     { section: 'github', label: 'GitHub PRs', icon: GitPullRequest, badge: 'CI' },
     { section: 'patches', label: 'Autonomous Patches', icon: GitCommit, badge: 3 },
-    { section: 'compliance', label: 'Compliance Dossiers', icon: FileCheck2 },
     { section: 'evaluation', label: 'Benchmark Bench', icon: Target },
     { section: 'agents', label: 'Agent Fleet', icon: Bot },
     { section: 'settings', label: 'Settings', icon: Settings },

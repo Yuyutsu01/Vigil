@@ -572,7 +572,6 @@ export type VigilNavSection =
   | 'dashboard'
   | 'reviews'
   | 'new_review'
-  | 'compliance'
   | 'evaluation'
   | 'github'
   | 'patches'
