@@ -83,11 +83,14 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b ${
         scrolled
-          ? 'bg-black/90 backdrop-blur-md border-white/10 shadow-lg shadow-black/40'
-          : 'bg-black/40 backdrop-blur-sm border-white/10'
+          ? 'bg-black/90 backdrop-blur-2xl border-white/20 shadow-2xl shadow-black/80'
+          : 'bg-black/70 backdrop-blur-xl border-white/15'
       }`}
     >
-      <nav className="mx-auto w-full max-w-[1400px] h-14 sm:h-16 flex items-center justify-between px-4 sm:px-8 lg:px-10">
+      {/* Specular top rim light */}
+      <div className="pointer-events-none absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+
+      <nav className="mx-auto w-full max-w-[1560px] h-[72px] sm:h-20 flex items-center justify-between px-6 sm:px-10 lg:px-14 xl:px-16">
         {/* Brand Logo & Home Anchor */}
         <Link
           href="/"
@@ -97,18 +100,18 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }}
-          className="group flex items-center gap-2.5"
+          className="group flex items-center gap-3 cursor-pointer py-1.5"
           aria-label="Vigil home"
         >
           <img
             src="/images/vigil-logo.png"
             alt="Vigil"
-            className="h-6 sm:h-7 w-auto transition-transform group-hover:scale-105 duration-300"
+            className="h-7 sm:h-8 md:h-9 w-auto transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <div className="hidden lg:flex items-center gap-7 xl:gap-8">
+        {/* Desktop Navigation Links — Broader & High-Readability Glossy Glassmorphic Pills */}
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3">
           {NAV_LINKS.map((link) => (
             <a
               key={link.label}
@@ -117,10 +120,11 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
                 e.preventDefault();
                 handleNav(link.href);
               }}
-              className="group relative text-xs font-normal text-zinc-300 hover:text-white transition-colors duration-200 cursor-pointer tracking-wide"
+              className="group relative px-4 py-2 rounded-full text-[14px] xl:text-[14.5px] font-medium tracking-normal text-zinc-200 hover:text-white transition-all duration-200 border border-transparent hover:border-white/25 hover:bg-white/[0.1] hover:backdrop-blur-md hover:shadow-[0_0_20px_rgba(255,255,255,0.09)] cursor-pointer active:scale-95"
             >
-              {link.label}
-              <span className="absolute -bottom-1 left-0 h-px w-0 bg-white transition-all duration-200 group-hover:w-full" />
+              <span className="relative z-10">{link.label}</span>
+              {/* Glossy specular top reflection inside hover pill */}
+              <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.18] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
             </a>
           ))}
         </div>
@@ -129,9 +133,13 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
         <div className="hidden md:flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="text-xs font-mono tracking-wider text-zinc-300 hover:text-white uppercase px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 bg-white/[0.02] transition-colors"
+            className="group relative px-4 py-2 rounded-full text-xs font-mono tracking-wider text-zinc-200 hover:text-white uppercase border border-white/20 bg-white/[0.04] hover:bg-white/[0.12] hover:border-white/40 transition-all duration-200 shadow-sm hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
           >
-            SecOps Console
+            <span className="relative z-10 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              SecOps Console
+            </span>
+            <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.15] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
 
           <button
@@ -139,13 +147,13 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
             onClick={onGetStarted}
             style={{
               '--duration': 3,
-              '--light-width': '110px',
+              '--light-width': '120px',
               '--light-color': '#FAFAFA',
               '--border-width': '2px',
               isolation: 'isolate',
-              '--path': "path('M 0 0 H 135 V 32 H 0 V 0')",
+              '--path': "path('M 0 0 H 145 V 40 H 0 V 0')",
             } as React.CSSProperties}
-            className="group/star-button relative z-[3] inline-flex h-8 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-3xl border border-slate-200/50 px-4 py-2 text-xs font-medium transition-colors cursor-pointer hover:border-white disabled:pointer-events-none disabled:opacity-50"
+            className="group/star-button relative z-[3] inline-flex h-10 items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-3xl border border-slate-200/60 px-5 py-2.5 text-xs sm:text-[13px] font-semibold tracking-wide transition-all duration-200 cursor-pointer hover:border-white hover:scale-[1.02] active:scale-95 disabled:pointer-events-none disabled:opacity-50 shadow-[0_0_20px_rgba(255,255,255,0.12)]"
           >
             <div
               className="absolute inset-0 aspect-square animate-star-btn bg-[radial-gradient(ellipse_closest-side_at_center,var(--light-color),transparent,transparent)]"
@@ -181,7 +189,7 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
                 </defs>
               </svg>
             </div>
-            <span className="relative z-10 inline-flex items-center gap-1 whitespace-nowrap text-white">
+            <span className="relative z-10 inline-flex items-center gap-1.5 whitespace-nowrap text-white font-medium">
               GET STARTED
               <Arrow />
             </span>
@@ -198,8 +206,8 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="22"
-            height="22"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -228,9 +236,9 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
         className={`fixed inset-0 z-40 bg-black transition-all duration-300 lg:hidden ${
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
-        style={{ top: '56px' }}
+        style={{ top: '72px' }}
       >
-        <div className="flex h-[calc(100vh-56px)] flex-col px-6 pb-8 pt-8 justify-between">
+        <div className="flex h-[calc(100vh-72px)] flex-col px-6 pb-8 pt-8 justify-between">
           <div className="flex flex-col gap-5">
             {NAV_LINKS.map((link) => (
               <a

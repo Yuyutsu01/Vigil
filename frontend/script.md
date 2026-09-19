@@ -47,20 +47,22 @@ The **Vigil Landing Page** serves as the primary storefront and conversion engin
 
 ### Scene 1: Sticky Navigation Header (`Navbar.tsx`)
 
-* **Visual Style**: Translucent glassmorphism (`backdrop-blur-md bg-black/60 border-b border-white/10`), sticky top-0, z-50.
+* **Visual Style**: Broader translucent glassmorphism (`backdrop-blur-xl bg-black/85 border-b border-white/15 shadow-2xl`), sticky top-0, z-50 with specular top rim lighting.
 * **Layout**:
-  * **Left**: Brand Logo (Shield glyph with pulsing emerald dot) + `Vigil` wordmark + version badge (`v1.0`).
-  * **Center**: Smooth scroll navigation links:
+  * **Dimensions**: `max-w-[1440px]`, `h-16 sm:h-[68px]`, generous horizontal padding (`px-5 sm:px-8 lg:px-12`).
+  * **Left**: Brand Logo (Shield glyph with pulsing emerald dot) + `Vigil` wordmark.
+  * **Center**: High-readability navigation links with **glossy frosted pill hover interactions**:
     * `About` → `#about`
-    * `Features` → `#features`
-    * `Benchmarks` → `#benchmarks`
+    * `Capabilities` → `#features`
+    * `Results` → `#benchmarks`
     * `Pipeline` → `#execution`
-    * `Rules` → `#verification`
-    * `Agents` → `#insights`
+    * `Security` → `#verification`
+    * `Product` → `#insights`
+    * `Customers` → `#testimonials`
+    * *Hover FX*: `hover:bg-white/[0.08] hover:border-white/20 hover:backdrop-blur-md hover:shadow-[0_0_15px_rgba(255,255,255,0.07)] active:scale-95`.
   * **Right**:
-    * **Sign In** (`/login`)
-    * **Get Started** button (`/register`) with subtle ambient glow.
-* **Micro-interactions**: Hover underline glows, mobile slide-down hamburger drawer with backdrop blur.
+    * **SecOps Console** link with glossy ambient pill styling.
+    * **Get Started** luminous star-glow button (`/register`).
 
 ---
 
@@ -68,15 +70,24 @@ The **Vigil Landing Page** serves as the primary storefront and conversion engin
 
 * **Visual Style**: Full viewport height (`100dvh`), pure OLED background (`#000000`) with real-time Three.js WebGL particle vortex reacting to cursor velocity and pointer repel physics.
 * **Primary Headline**:
-  * **"Find bugs and security issues before they reach production."**
+  * **"Your Code's Got Secrets. We Find Them."**
 * **Subheading**:
-  * *"Vigil reviews your Python, JavaScript, and TypeScript code using specialized review agents and proven static analysis tools. Every issue comes with a clear explanation, a suggested fix, and a severity rating — so you can fix problems early and ship with confidence."*
+  * *"Vigil puts your code under the microscope. AI agents hunt down bugs, security risks, and code smells, then explain the issue, severity, and fix, so you can ship without surprises."*
 * **Call-to-Action Cluster**:
   1. **Primary Button (`StarButton`)**: `GET STARTED →` — animated radial highlight sweeping around a pill border. Routes to `/register`.
   2. **Secondary Button (`DemoButton`)**: `REQUEST A DEMO` — crisp white pill button with subtle top specular line. Triggers interactive terminal simulation modal.
-* **Pinned Velocity Marquee**:
-  * Infinite horizontal auto-scroll of partner logos (GitHub Actions, Stripe, Supabase, Vercel, Slack, BigQuery, AWS S3, Snowflake).
-  * Physics: Increases speed smoothly on mouse hover (`40px/s → 140px/s` with inertia dampening).
+* **Pinned Velocity Marquee (Running Tech & Security Logos)**:
+  * Infinite horizontal auto-scroll with fluid inertial acceleration on hover (`40px/s → 130px/s`).
+  * Running Logos:
+    * ⚛️ **React** (Interactive Atom SVG)
+    * ⚗️ **Alembic** (Migration Flask SVG)
+    * ⚡ **FastAPI** (Async Lightning Bolt SVG)
+    * 🕸️ **LangGraph** (Multi-Agent State Graph SVG)
+    * 🔐 **JWT** (Cryptographic Token Lock SVG)
+    * 🐘 **PostgreSQL** (Relational Database SVG)
+    * 🐳 **Docker** (Containerization Whale SVG)
+    * 🛡️ **CWE** (MITRE Security Taxonomy Shield SVG)
+    * 🔍 **Semgrep** (AST Rule Engine SVG)
 
 ---
 
