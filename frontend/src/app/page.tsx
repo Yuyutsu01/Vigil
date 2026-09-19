@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
-import { BrandLogos } from '@/components/landing/BrandLogos';
 import { ContentSections } from '@/components/landing/ContentSections';
 import { StatefulExecutionSection } from '@/components/landing/StatefulExecutionSection';
 import { DurableAutonomySection } from '@/components/landing/DurableAutonomySection';
@@ -58,10 +57,7 @@ export default function LandingPage() {
         {/* 2. Screen-Fit 3D Hero with Particle Vortex */}
         <Hero onGetStarted={handleGetStarted} onRequestDemo={handleOpenDemo} />
 
-        {/* 3. Verified Platform Integrations Strip */}
-        <BrandLogos />
-
-        {/* 4. Primary Mission Statement, Capabilities & Empirical Benchmarks (#about, #features, #benchmarks) */}
+        {/* 3. Primary Mission Statement, Capabilities & Empirical Benchmarks (#about, #features, #benchmarks) */}
         <ContentSections
           onOpenGetStarted={handleGetStarted}
           onOpenDemo={handleOpenDemo}

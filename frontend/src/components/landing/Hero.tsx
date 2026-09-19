@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 
 // Dynamically import Three.js / WebGL particle vortex to prevent SSR canvas errors
 const Vortex = dynamic(() => import('./Vortex'), {
@@ -237,16 +236,6 @@ export default function Hero({ onGetStarted, onRequestDemo }: HeroProps) {
 
       {/* Hero center content (Headline, Subtitle, CTA buttons) */}
       <div className="relative z-10 my-auto mx-auto flex w-full max-w-4xl flex-col items-center px-4 text-center">
-        {/* Verification Badge */}
-        <div
-          className={`mb-4 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] text-xs font-mono text-zinc-300 transition-all duration-700 ${
-            mounted ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
-          }`}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span>AUTOMATED CODE REVIEW</span>
-        </div>
-
         {/* Headline */}
         <h1
           className={`font-display text-5xl md:text-6xl lg:text-7xl font-semibold leading-[1.05] tracking-tight text-white transition-all duration-700 ${
@@ -273,12 +262,6 @@ export default function Hero({ onGetStarted, onRequestDemo }: HeroProps) {
         >
           <StarButton onClick={onGetStarted} />
           <DemoButton onClick={onRequestDemo} />
-          <Link
-            href="/dashboard"
-            className="text-xs font-mono tracking-wider text-zinc-400 hover:text-white uppercase px-3 py-2 transition-colors flex items-center gap-1.5"
-          >
-            SecOps Console →
-          </Link>
         </div>
       </div>
 
