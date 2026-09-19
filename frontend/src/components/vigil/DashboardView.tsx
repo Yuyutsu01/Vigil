@@ -115,7 +115,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* New Tenant Welcome Banner */}
       {isNewTenant && (
         <div className="p-4 rounded-xl border border-white/15 bg-white/[0.04] flex items-center gap-3 text-xs text-white/80">
-          <Info className="w-4 h-4 text-emerald-400 shrink-0" />
+          <Info className="w-4 h-4 text-white/60 shrink-0" />
           <span>No reviews yet — submit your first to see stats.</span>
         </div>
       )}
@@ -131,7 +131,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="text-2xl font-bold font-mono text-white mt-2">
             {totalReviews}
           </div>
-          <div className="text-[11px] text-emerald-400 mt-2 flex items-center gap-1 font-mono">
+          <div className="text-[11px] text-white/60 mt-2 flex items-center gap-1 font-mono">
             <TrendingUp className="w-3 h-3" />
             <span>{weekOverWeekText}</span>
           </div>
@@ -157,12 +157,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03] flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-white/50">
             <span>Verified Accuracy (FP Rate)</span>
-            <Shield className="w-4 h-4 text-emerald-400" />
+            <Shield className="w-4 h-4 text-white/60" />
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-2">
             {totalFindings > 0 ? '< 0.1%' : '0.0%'}
           </div>
-          <div className="text-[11px] text-emerald-400 mt-2 font-mono">
+          <div className="text-[11px] text-white/60 mt-2 font-mono">
             AST + Semgrep cross-validated
           </div>
         </div>
@@ -250,13 +250,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <SeverityBadge severity="medium" size="sm" />
                       )}
                       {rev.totalFindings === 0 && (
-                        <span className="text-emerald-400 text-xs">Clean (0)</span>
+                        <span className="text-white/60 text-xs">Clean (0)</span>
                       )}
                     </div>
                   </td>
                   <td className="py-3 px-4 text-white/60 font-sans">{rev.policyProfile}</td>
                   <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-white/60 bg-white/8 px-2 py-0.5 rounded-full border border-white/18">
                       <Clock className="w-3 h-3" />
                       <span>Completed</span>
                     </span>

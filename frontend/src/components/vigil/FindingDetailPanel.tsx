@@ -77,7 +77,7 @@ export const FindingDetailPanel: React.FC<FindingDetailPanelProps> = ({
             )}
           </div>
           <div className="text-xs font-mono text-white/50">
-            Confidence: <span className="text-emerald-400 font-bold">{Math.round(finding.confidence * 100)}%</span>
+            Confidence: <span className="text-white/60 font-bold">{Math.round(finding.confidence * 100)}%</span>
           </div>
         </div>
 
@@ -224,7 +224,7 @@ export const FindingDetailPanel: React.FC<FindingDetailPanelProps> = ({
                 </div>
                 <div className="flex justify-between py-1 border-b border-white/10">
                   <span>Confidence Score:</span>
-                  <span className="text-emerald-400 font-mono">{(finding.confidence * 100).toFixed(1)}%</span>
+                  <span className="text-white/60 font-mono">{(finding.confidence * 100).toFixed(1)}%</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-white/10">
                   <span>AST Node Location:</span>
@@ -238,9 +238,9 @@ export const FindingDetailPanel: React.FC<FindingDetailPanelProps> = ({
                 </div>
               </div>
             </div>
-            <div className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-emerald-300 leading-relaxed">
-              <div className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="p-3.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-xs text-white/70 leading-relaxed">
+              <div className="font-semibold text-white/60 mb-1 flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-white/60" />
                 Zero-Execution Policy Check
               </div>
               Static analysis confirmed via AST parsing and semantic reasoning. Untrusted code was not executed or compiled during detection.
@@ -262,8 +262,8 @@ export const FindingDetailPanel: React.FC<FindingDetailPanelProps> = ({
               >
                 {copiedPatch ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">Diff Copied</span>
+                    <Check className="w-3.5 h-3.5 text-white/60" />
+                    <span className="text-white/60">Diff Copied</span>
                   </>
                 ) : (
                   <>
@@ -288,10 +288,10 @@ export const FindingDetailPanel: React.FC<FindingDetailPanelProps> = ({
                     </div>
                   ))}
                 </div>
-                <div className="p-3 bg-emerald-950/20 flex flex-col gap-0.5 text-emerald-300">
+                <div className="p-3 bg-emerald-950/20 flex flex-col gap-0.5 text-white/70">
                   {finding.diffPatch.replacement.map((line, i) => (
                     <div key={i} className="flex gap-2">
-                      <span className="text-emerald-500 select-none font-bold">+</span>
+                      <span className="text-white/55 select-none font-bold">+</span>
                       <span className="whitespace-pre overflow-x-auto">{line}</span>
                     </div>
                   ))}

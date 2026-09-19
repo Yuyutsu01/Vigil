@@ -65,7 +65,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3 flex items-center gap-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-white/50 uppercase mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
               <span>MULTI-AGENT REVIEW ENGINE</span>
             </div>
@@ -80,7 +80,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
             <button
               type="button"
               onClick={() => setShowAgentBreakdown((v) => !v)}
-              className="text-xs sm:text-sm font-mono text-emerald-400 hover:text-emerald-300 underline underline-offset-4 cursor-pointer"
+              className="text-xs sm:text-sm font-mono text-white/60 hover:text-white/70 underline underline-offset-4 cursor-pointer"
             >
               {showAgentBreakdown ? '▲ Hide full agent breakdown' : '▼ View full agent structure'}
             </button>
@@ -91,7 +91,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
         {showAgentBreakdown && (
           <div className="mb-10 p-6 rounded-2xl border border-white/15 bg-[#09090b] grid grid-cols-1 md:grid-cols-3 gap-6 text-xs animate-in fade-in slide-in-from-top-2 duration-300">
             <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-              <div className="font-mono text-emerald-400 font-semibold mb-2 flex items-center gap-2">
+              <div className="font-mono text-white/60 font-semibold mb-2 flex items-center gap-2">
                 <Cpu className="w-4 h-4" /> 8 LLM Agents
               </div>
               <ul className="space-y-1.5 text-zinc-300">
@@ -106,7 +106,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
               </ul>
             </div>
             <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02]">
-              <div className="font-mono text-cyan-400 font-semibold mb-2 flex items-center gap-2">
+              <div className="font-mono text-white/60 font-semibold mb-2 flex items-center gap-2">
                 <Boxes className="w-4 h-4" /> 5 Deterministic Stages
               </div>
               <ul className="space-y-1.5 text-zinc-300">
@@ -218,7 +218,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
                       <span className="truncate">CWE-89 SQLi</span>
                     </div>
                     <div className="flex items-center gap-2.5 px-2.5 py-1 rounded hover:bg-white/5 cursor-pointer">
-                      <span className="w-2 h-2 rounded-full border border-cyan-400 bg-cyan-400/30 inline-block" />
+                      <span className="w-2 h-2 rounded-full border border-white/30 bg-cyan-400/30 inline-block" />
                       <span className="truncate">CWE-78 Cmd Injection</span>
                     </div>
                     <div className="flex items-center gap-2.5 px-2.5 py-1 rounded hover:bg-white/5 cursor-pointer">
@@ -231,10 +231,10 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
 
               <div className="pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
                   <span>Scanner Online</span>
                 </div>
-                <span className="font-mono text-[10px] text-emerald-400">99.9%</span>
+                <span className="font-mono text-[10px] text-white/60">99.9%</span>
               </div>
             </div>
 
@@ -268,18 +268,18 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
                 <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] flex flex-col justify-between">
                   <div className="flex items-center justify-between">
                     <div className="text-[12px] text-white/50 font-normal">False-positive rate</div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <div className="flex items-center gap-1.5 text-[11px] text-white/60 font-mono">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
                       <span>AST-Proven</span>
                     </div>
                   </div>
                   <div className="mt-2">
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl sm:text-2xl font-semibold text-white tracking-tight">&lt; 0.1%</span>
-                      <span className="text-xs text-emerald-400/80 font-mono">/ 0 fp SLA</span>
+                      <span className="text-xs text-white/60/80 font-mono">/ 0 fp SLA</span>
                     </div>
                     <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden mt-2">
-                      <div className="h-full rounded-full bg-emerald-400" style={{ width: '99.9%' }} />
+                      <div className="h-full rounded-full bg-white/30" style={{ width: '99.9%' }} />
                     </div>
                     <div className="text-[10.5px] text-white/40 mt-1 font-mono">
                       Deterministic AST taint path validation
@@ -409,7 +409,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
                             }`}
                           >
                             <div className="col-span-5 flex items-center gap-2 text-white/85 font-normal truncate">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400" />
+                              <span className="w-1 h-1 rounded-full bg-white/30" />
                               <span className="truncate">{row.name}</span>
                             </div>
                             <span className="col-span-2 text-right font-mono text-white/90 font-medium">
@@ -444,7 +444,7 @@ export const AgentInsightsSection: React.FC<AgentInsightsSectionProps> = () => {
 
                   <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono text-white/40 select-none">
                     <span>10 repositories actively scanned</span>
-                    <span className="text-emerald-400/90">Autonomous patch verification active</span>
+                    <span className="text-white/60/90">Autonomous patch verification active</span>
                   </div>
                 </div>
               </div>

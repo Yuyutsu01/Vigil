@@ -31,7 +31,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
         {/* Top Header Grid */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3 flex items-center gap-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-white/50 uppercase mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
               <span>REVIEW PIPELINE</span>
             </div>
@@ -56,7 +56,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                 {/* Brand Header */}
                 <div className="flex items-center justify-between pb-2 border-b border-white/10">
                   <div className="flex items-center gap-2 text-white font-medium text-[13px] hover:text-white/90 cursor-pointer">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <ShieldCheck className="w-4 h-4 text-white/60" />
                     <span>Vigil Security</span>
                     <ChevronDown className="w-3.5 h-3.5 text-white/50" />
                   </div>
@@ -125,7 +125,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                       <span className="truncate">auth-service (CWE-502)</span>
                     </div>
                     <div className="flex items-center gap-2.5 px-2.5 py-1 rounded hover:bg-white/5 cursor-pointer">
-                      <span className="w-2 h-2 rounded-full border border-cyan-400 bg-cyan-400/30 inline-block" />
+                      <span className="w-2 h-2 rounded-full border border-white/30 bg-cyan-400/30 inline-block" />
                       <span className="truncate">worker-node (CWE-78)</span>
                     </div>
                   </div>
@@ -135,10 +135,10 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
               {/* Bottom sidebar status */}
               <div className="pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-white/40">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
                   <span>AST Daemon v2.4</span>
                 </div>
-                <span className="font-mono text-[10px] text-emerald-400/80">ARMED</span>
+                <span className="font-mono text-[10px] text-white/60/80">ARMED</span>
               </div>
             </div>
 
@@ -151,7 +151,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                 <div className="w-[18%] text-center">02 // STATIC RULES</div>
                 <div className="w-[18%] text-center">03 // LLM REASONING</div>
                 <div className="w-[14%] text-center">04 // TRIAGE</div>
-                <div className="w-[12%] text-center font-semibold text-emerald-400">05 // VERIFIED</div>
+                <div className="w-[12%] text-center font-semibold text-white/60">05 // VERIFIED</div>
               </div>
 
               {/* Grid Background Lines */}
@@ -173,7 +173,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                   onMouseLeave={() => setHoveredTask(null)}
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-sm bg-rose-400 inline-block shadow-[0_0_6px_#f43f5e]" />
+                    <span className="w-1.5 h-1.5 rounded-sm bg-rose-400 inline-block shadow-[0_0_6px_#ffffff]" />
                     <span className="text-white font-medium text-[12.5px]">PR #482 — fastapi-order-gateway</span>
                     <span className="text-[11px] font-mono text-rose-400/80">CWE-89 SQLi Detected</span>
                   </div>
@@ -184,14 +184,14 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                         <span className="font-mono">AST Trace</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_6px_#f43f5e]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_6px_#ffffff]" />
                         <span className="font-mono">Taint Sink Found</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/30 " />
                         <span className="font-mono">Diff Patch Verified</span>
                       </div>
-                      <div className="absolute right-0 top-0 bottom-0 w-[24%] rounded-r-lg border-l border-dashed border-emerald-500/50 bg-emerald-500/10 flex items-center justify-center overflow-hidden">
+                      <div className="absolute right-0 top-0 bottom-0 w-[24%] rounded-r-lg border-l border-dashed border-white/20 bg-white/8 flex items-center justify-center overflow-hidden">
                         <div
                           className="w-full h-full opacity-35"
                           style={{
@@ -226,7 +226,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                         <span className="font-mono">RCE Exploit Proof</span>
                       </div>
                       <div className="flex items-center gap-1.5 mr-24">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
                         <span className="font-mono">JSON Migration Patch</span>
                       </div>
                       <div className="absolute right-0 top-0 bottom-0 w-[20%] rounded-r-lg border-l border-dashed border-sky-400/50 bg-sky-400/10 flex items-center justify-center overflow-hidden">
@@ -264,10 +264,10 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                         <span className="font-mono">Sanitized Array Args</span>
                       </div>
                       <div className="flex items-center gap-1.5 mr-20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
                         <span className="font-mono">MicroVM Gate Passed</span>
                       </div>
-                      <div className="absolute right-0 top-0 bottom-0 w-[18%] rounded-r-lg border-l border-dashed border-emerald-400/50 bg-emerald-400/10 flex items-center justify-center overflow-hidden">
+                      <div className="absolute right-0 top-0 bottom-0 w-[18%] rounded-r-lg border-l border-dashed border-white/30/50 bg-white/8 flex items-center justify-center overflow-hidden">
                         <div
                           className="w-full h-full opacity-35"
                           style={{
@@ -324,7 +324,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                       stroke="rgba(255, 255, 255, 0.45)"
                       strokeWidth="1.4"
                     />
-                    <circle cx="46" cy="56" r="2.2" fill="#34d399" />
+                    <circle cx="46" cy="56" r="2.2" fill="rgba(255,255,255,0.60)" />
                   </svg>
 
                   <div
@@ -333,9 +333,9 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                     onMouseLeave={() => setHoveredTask(null)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-sm bg-emerald-400 inline-block shadow-[0_0_6px_#34d399]" />
+                      <span className="w-1.5 h-1.5 rounded-sm bg-white/30 inline-block " />
                       <span className="text-white font-medium text-[12.5px]">SARIF Compliance Dossier</span>
-                      <span className="text-[11px] font-mono text-emerald-400/80">SOC2 Type II Artifact</span>
+                      <span className="text-[11px] font-mono text-white/60/80">SOC2 Type II Artifact</span>
                     </div>
                     <div className="relative h-9 w-full">
                       <div className="absolute top-1 left-0 w-[84%] h-7 rounded-lg border border-white/15 bg-white/[0.04] flex items-center justify-between px-6 text-[10.5px] text-white/70 backdrop-blur-sm transition-all group-hover:border-white/30">
@@ -344,7 +344,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                           <span className="font-mono">SARIF v2.1.0 JSON</span>
                         </div>
                         <div className="flex items-center gap-1.5 mr-8">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
                           <span className="font-mono">Signed Ledger Hash</span>
                         </div>
                       </div>
@@ -370,7 +370,7 @@ export const StatefulExecutionSection: React.FC<StatefulExecutionSectionProps> =
                         <span className="font-mono">Shannons Entropy</span>
                       </div>
                       <div className="flex items-center gap-1.5 mr-6">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
                         <span className="font-mono">Zero Leaked API Keys</span>
                       </div>
                     </div>

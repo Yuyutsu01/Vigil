@@ -61,7 +61,7 @@ export const Topbar: React.FC<TopbarProps> = ({
 
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono px-3 py-1 rounded-full border border-white/10 bg-white/[0.02] text-white/70">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
           <span>AST Engines Healthy</span>
         </div>
 

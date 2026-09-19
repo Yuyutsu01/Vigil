@@ -68,7 +68,7 @@ function CodeEditorMock() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={'px-3 py-2 capitalize transition-colors ' + (activeTab === tab ? 'text-white border-b-2 border-cyan-400' : 'text-white/35 hover:text-white/60')}
+                className={'px-3 py-2 capitalize transition-colors ' + (activeTab === tab ? 'text-white border-b-2 border-white/30' : 'text-white/35 hover:text-white/60')}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
@@ -93,7 +93,7 @@ function CodeEditorMock() {
             )}
             {activeTab === 'explanation' && (
               <div className="text-[9px] text-white/55 leading-relaxed space-y-2">
-                <p>The <code className="text-cyan-400">user_id</code> flows into an f-string SQL query without sanitisation.</p>
+                <p>The <code className="text-white/60">user_id</code> flows into an f-string SQL query without sanitisation.</p>
                 <p>An attacker can craft input like <code className="text-red-400">1&apos; OR &apos;1&apos;=&apos;1</code> to dump the users table.</p>
                 <p className="text-white/30 mt-2">CWE-89 &middot; Severity: Critical &middot; OWASP A03</p>
               </div>
@@ -108,7 +108,7 @@ function CodeEditorMock() {
           </div>
           <div className="px-3 py-2 border-t border-white/10 flex items-center justify-between text-[8px] font-mono text-white/25">
             <span>Static AST Check</span>
-            <span className="flex items-center gap-1 text-cyan-400/60">
+            <span className="flex items-center gap-1 text-white/40">
               <svg className="w-2.5 h-2.5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
               </svg>
@@ -139,11 +139,11 @@ export function ProductShowcase({ onGetStarted, onRequestDemo }: { onGetStarted?
 
   return (
     <section ref={ref} id="product-showcase" className="relative w-full bg-black border-t border-white/10 overflow-hidden">
-      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 45% at 72% 50%, rgba(34,211,238,0.05) 0%, transparent 70%)' }} />
+      <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(ellipse 55% 45% at 72% 50%, rgba(255,255,255,0.02) 0%, transparent 70%)' }} />
       <div className="max-w-7xl mx-auto px-6 md:px-14 py-24 md:py-32">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="transition-all duration-700" style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(30px)' }}>
-            <div className="text-xs font-mono tracking-[0.2em] text-cyan-400/65 uppercase mb-5">Cleaner Code.&nbsp;&nbsp;Fewer Surprises.</div>
+            <div className="text-xs font-mono tracking-[0.2em] text-white/45 uppercase mb-5">Cleaner Code.&nbsp;&nbsp;Fewer Surprises.</div>
             <h2 className="text-4xl sm:text-5xl xl:text-[3.5rem] font-bold tracking-tight text-white leading-[1.07] mb-6">
               Every commit is a chance to ship a bug.
             </h2>

@@ -34,7 +34,7 @@ export const SettingsView: React.FC = () => {
 
       <form onSubmit={handleSave} className="flex flex-col gap-6">
         {saved && (
-          <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+          <div className="p-3 rounded-xl border border-white/18 bg-white/8 text-white/70 text-xs flex items-center gap-2 animate-in fade-in">
             <Check className="w-4 h-4" />
             <span>Configuration changes committed to cryptographic tenant registry.</span>
           </div>

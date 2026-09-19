@@ -220,7 +220,7 @@ export const CelestialCTASection: React.FC<CelestialCTASectionProps> = ({
       />
 
       <div className="max-w-4xl mx-auto relative z-10 flex flex-col items-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 bg-white/5 text-xs md:text-sm font-mono uppercase tracking-widest text-cyan-400/80 mb-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 bg-white/5 text-xs md:text-sm font-mono uppercase tracking-widest text-white/50 mb-6">
           ▲ CODE REVIEW &amp; SECURITY
         </div>
         <h2 className="text-4xl sm:text-6xl font-normal tracking-tight text-white mb-6">

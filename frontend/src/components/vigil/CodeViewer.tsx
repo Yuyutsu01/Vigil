@@ -83,8 +83,8 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-400">Copied</span>
+                  <Check className="w-3.5 h-3.5 text-white/60" />
+                  <span className="text-white/60">Copied</span>
                 </>
               ) : (
                 <>

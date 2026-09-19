@@ -148,7 +148,7 @@ function LoginForm() {
 
       {/* Compliance footer */}
       <div className="mt-6 flex items-center justify-center gap-1.5 text-[11px] font-mono text-white/40">
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <ShieldCheck className="w-3.5 h-3.5 text-white/60" />
         <span>TLS 1.3 / Zero-Execution Ephemeral Memory Session</span>
       </div>
     </div>

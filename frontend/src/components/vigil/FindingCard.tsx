@@ -89,7 +89,7 @@ export const FindingCard: React.FC<FindingCardProps> = ({ finding, isSelected, o
               <span>Flagged FP</span>
             </span>
           ) : finding.userFeedback?.helpful === true ? (
-            <span className="text-[10.5px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
+            <span className="text-[10.5px] text-white/60 bg-white/8 px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-emerald-500/20">
               <CheckCircle2 className="w-3 h-3" />
               <span>Confirmed</span>
             </span>

@@ -6,9 +6,9 @@ export const BrandLogos: React.FC = () => {
     <div className="relative z-20 py-10 sm:py-12 px-4 w-full border-b border-white/10 bg-black flex items-center justify-center gap-6 sm:gap-10 md:gap-14 flex-wrap opacity-75 hover:opacity-100 transition-opacity select-none">
       {/* 1. React */}
       <div className="flex items-center gap-2 text-white/90 font-medium text-[13.5px] sm:text-[14.5px] tracking-tight group hover:text-white transition-colors">
-        <svg className="w-4 h-4 text-cyan-400 group-hover:rotate-45 transition-transform duration-500 fill-none stroke-current" viewBox="-11.5 -10.23174 23 20.46348">
-          <circle cx="0" cy="0" r="2.05" fill="#22d3ee" stroke="none" />
-          <g stroke="#22d3ee" strokeWidth="1" fill="none">
+        <svg className="w-4 h-4 text-white/60 group-hover:rotate-45 transition-transform duration-500 fill-none stroke-current" viewBox="-11.5 -10.23174 23 20.46348">
+          <circle cx="0" cy="0" r="2.05" fill="rgba(255,255,255,0.65)" stroke="none" />
+          <g stroke="rgba(255,255,255,0.65)" strokeWidth="1" fill="none">
             <ellipse rx="11" ry="4.2" />
             <ellipse rx="11" ry="4.2" transform="rotate(60)" />
             <ellipse rx="11" ry="4.2" transform="rotate(120)" />
@@ -31,7 +31,7 @@ export const BrandLogos: React.FC = () => {
       <div className="flex items-center gap-2 text-white/90 font-medium text-[13.5px] sm:text-[14.5px] tracking-tight group hover:text-white transition-colors">
         <svg className="w-4 h-4 fill-emerald-400" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10" fill="#059669" fillOpacity="0.2" stroke="#10b981" strokeWidth="1.5" />
-          <path d="M13 3L6 14h5l-2 7 9-12h-5l2-6z" fill="#34d399" />
+          <path d="M13 3L6 14h5l-2 7 9-12h-5l2-6z" fill="rgba(255,255,255,0.60)" />
         </svg>
         <span className="font-semibold">FastAPI</span>
       </div>
@@ -54,7 +54,7 @@ export const BrandLogos: React.FC = () => {
         <svg className="w-4 h-4 fill-none stroke-pink-400" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-          <circle cx="12" cy="16.5" r="1.5" fill="#f43f5e" />
+          <circle cx="12" cy="16.5" r="1.5" fill="#ffffff" />
         </svg>
         <span className="font-semibold font-mono">JWT</span>
       </div>
@@ -88,11 +88,11 @@ export const BrandLogos: React.FC = () => {
 
       {/* 9. Semgrep */}
       <div className="flex items-center gap-2 text-white/90 font-mono text-[13px] sm:text-[14px] tracking-tight group hover:text-white transition-colors">
-        <svg className="w-4 h-4 text-emerald-400 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-4 h-4 text-white/60 fill-none stroke-current" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="4 17 10 11 4 5" />
           <line x1="12" y1="19" x2="20" y2="19" />
         </svg>
-        <span className="font-bold text-emerald-300">Semgrep</span>
+        <span className="font-bold text-white/70">Semgrep</span>
       </div>
     </div>
   );

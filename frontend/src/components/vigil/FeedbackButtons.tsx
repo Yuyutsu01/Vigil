@@ -64,7 +64,7 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
         <div
           role="status"
           aria-live="polite"
-          className="absolute -top-9 right-2 bg-black border border-emerald-500/40 text-emerald-300 text-xs px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in"
+          className="absolute -top-9 right-2 bg-black border border-emerald-500/40 text-white/70 text-xs px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in"
         >
           <Check className="w-3 h-3" />
           <span>Feedback saved to learning loop</span>
@@ -79,7 +79,7 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
             aria-label="Mark as useful finding"
             className={`p-1.5 rounded-full border text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${focusRing} ${
               feedback?.helpful === true
-                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                ? 'bg-white/10 border-emerald-500/40 text-white/70'
                 : 'bg-white/[0.04] border-white/15 text-white/60 hover:text-white hover:bg-white/10'
             }`}
             title="Mark as helpful finding"
@@ -106,7 +106,7 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 
       {feedback && !isExpanding && (
         <div className="text-[11px] text-white/50 font-mono flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
           <span>
             Logged: {feedback.helpful ? 'Verified True Positive' : feedback.reason || 'Reported'}
           </span>

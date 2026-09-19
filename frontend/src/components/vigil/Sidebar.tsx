@@ -100,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <X className="w-4 h-4" />
             </button>
           ) : !collapsed ? (
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-white/30 animate-pulse" />
           ) : null}
         </div>
 
@@ -174,11 +174,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-3 rounded-xl border border-white/10 bg-white/[0.02] flex flex-col gap-1.5 text-[11px] font-mono">
             <div className="flex justify-between text-white/50">
               <span>Deterministic Taint</span>
-              <span className="text-emerald-400">ACTIVE</span>
+              <span className="text-white/60">ACTIVE</span>
             </div>
             <div className="flex justify-between text-white/50">
               <span>Zero-Execution Box</span>
-              <span className="text-emerald-400">ENFORCED</span>
+              <span className="text-white/60">ENFORCED</span>
             </div>
           </div>
         )}
@@ -189,7 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/60 text-[10px] font-mono"
             title="Tenant: acme-corp (SOC2-Compliant)"
           >
-            <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <Shield className="w-3.5 h-3.5 text-white/60" />
           </div>
         ) : (
           <div className="text-[10.5px] text-white/40 flex justify-between items-center w-full">

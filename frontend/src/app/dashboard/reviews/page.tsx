@@ -79,7 +79,7 @@ export default function ReviewsPage() {
               onClick={() => setIsSelectorOpen((v) => !v)}
               className="flex items-center gap-2 text-white font-medium hover:text-white/80 transition-colors py-1 px-2 rounded-lg hover:bg-white/5 cursor-pointer font-mono"
             >
-              <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+              <FileCode className="w-3.5 h-3.5 text-white/60" />
               <span>
                 {currentReview.title} ({currentReview.id})
               </span>

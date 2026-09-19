@@ -122,7 +122,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/[0.02]">
           <div className="flex items-center gap-3">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/30 animate-pulse" />
             <h2 id="demo-modal-title" className="text-sm font-semibold tracking-wide text-white uppercase font-mono">
               Vigil Autonomous Code Review Engine Demo
             </h2>
@@ -207,9 +207,9 @@ export const DemoModal: React.FC<DemoModalProps> = ({
                   <Database className="w-3.5 h-3.5" />
                   Durable Context State
                 </span>
-                <span className="text-[10px] text-emerald-400 font-mono">Sync Status: Healthy</span>
+                <span className="text-[10px] text-white/60 font-mono">Sync Status: Healthy</span>
               </div>
-              <pre className="p-3.5 rounded-lg bg-black border border-white/10 font-mono text-[11px] text-emerald-300/90 overflow-x-auto max-h-40 leading-relaxed">
+              <pre className="p-3.5 rounded-lg bg-black border border-white/10 font-mono text-[11px] text-white/70/90 overflow-x-auto max-h-40 leading-relaxed">
                 {JSON.stringify(currentJob?.memoryState || {}, null, 2)}
               </pre>
             </div>
@@ -230,7 +230,7 @@ export const DemoModal: React.FC<DemoModalProps> = ({
                     <span
                       className={
                         log.includes('[SUCCESS]')
-                          ? 'text-emerald-400'
+                          ? 'text-white/60'
                           : log.includes('[DISPATCH]')
                           ? 'text-sky-300'
                           : 'text-white/70'

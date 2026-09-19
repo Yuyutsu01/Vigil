@@ -82,7 +82,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ reports, onDownloadRep
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[11px] text-white/50">{rpt.id}</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-mono flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full bg-white/8 border border-white/18 text-white/60 text-[11px] font-mono flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" />
                   <span>{rpt.status}</span>
                 </span>
@@ -109,12 +109,12 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ reports, onDownloadRep
             <div className="p-5 rounded-2xl border border-white/15 bg-white/[0.02] flex flex-col gap-5 sticky top-6">
               <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div>
-                  <span className="text-[11px] font-mono text-emerald-400 uppercase tracking-wider">
+                  <span className="text-[11px] font-mono text-white/60 uppercase tracking-wider">
                     {selectedReport.framework}
                   </span>
                   <h3 className="text-base font-bold text-white mt-0.5">{selectedReport.title}</h3>
                 </div>
-                <ShieldCheck className="w-6 h-6 text-emerald-400 shrink-0" />
+                <ShieldCheck className="w-6 h-6 text-white/60 shrink-0" />
               </div>
 
               <div className="flex flex-col gap-2.5 text-xs">
@@ -132,7 +132,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({ reports, onDownloadRep
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-white/10">
                   <span className="text-white/50">Critical Issues Remediated:</span>
-                  <span className="text-emerald-400 font-mono font-bold">100% (0 Open)</span>
+                  <span className="text-white/60 font-mono font-bold">100% (0 Open)</span>
                 </div>
                 <div className="flex justify-between py-1.5">
                   <span className="text-white/50">Cryptographic Digest:</span>

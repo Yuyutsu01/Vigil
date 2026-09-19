@@ -63,8 +63,8 @@ export const AgentsView: React.FC = () => {
             Six static tool adapters run as sub-processes inside A2, not as separate agents.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-xs font-mono text-emerald-400">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/18 bg-white/8 text-xs font-mono text-white/60">
+          <span className="w-2 h-2 rounded-full bg-white/30 animate-pulse" />
           <span>14 / 14 Fleet Nodes Active</span>
         </div>
       </div>
@@ -116,7 +116,7 @@ export const AgentsView: React.FC = () => {
       {/* 8 LLM AGENTS SECTION */}
       {(activeTab === 'all' || activeTab === 'llm') && (
         <div className="flex flex-col gap-3">
-          <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-xs font-mono text-white/60 uppercase tracking-wider flex items-center gap-1.5">
             <Cpu className="w-3.5 h-3.5" />
             <span>Tier 1: 8 LLM Reasoning Agents</span>
           </div>
@@ -128,8 +128,8 @@ export const AgentsView: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-emerald-400 font-semibold">{agent.id}</span>
-                    <span className="text-emerald-400/80">{agent.status}</span>
+                    <span className="text-white/60 font-semibold">{agent.id}</span>
+                    <span className="text-white/60/80">{agent.status}</span>
                   </div>
                   <h3 className="text-xs font-bold text-white mt-1.5">{agent.name}</h3>
                   <p className="text-[11px] text-white/50 mt-0.5">{agent.role}</p>
@@ -147,7 +147,7 @@ export const AgentsView: React.FC = () => {
       {/* 5 DETERMINISTIC STAGES SECTION */}
       {(activeTab === 'all' || activeTab === 'deterministic') && (
         <div className="flex flex-col gap-3 pt-2">
-          <div className="text-xs font-mono text-cyan-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-xs font-mono text-white/60 uppercase tracking-wider flex items-center gap-1.5">
             <Boxes className="w-3.5 h-3.5" />
             <span>Tier 2: 5 Deterministic Stages (with 6 sub-process static adapters in A2)</span>
           </div>
@@ -159,8 +159,8 @@ export const AgentsView: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-cyan-400 font-semibold">{stage.id}</span>
-                    <span className="text-cyan-400/80">{stage.status}</span>
+                    <span className="text-white/60 font-semibold">{stage.id}</span>
+                    <span className="text-white/50">{stage.status}</span>
                   </div>
                   <h3 className="text-xs font-bold text-white mt-1.5">{stage.name}</h3>
                   <p className="text-[11px] text-white/50 mt-0.5">{stage.role}</p>
@@ -205,7 +205,7 @@ export const AgentsView: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 font-mono text-xs text-white/60">
               <div className="p-2.5 rounded-lg bg-black border border-white/10">
                 <span className="text-white/40 block text-[10px]">NETWORK ISOLATION</span>
-                <span className="text-emerald-400 font-semibold">{SANDBOX_EXECUTOR.egress}</span>
+                <span className="text-white/60 font-semibold">{SANDBOX_EXECUTOR.egress}</span>
               </div>
               <div className="p-2.5 rounded-lg bg-black border border-white/10">
                 <span className="text-white/40 block text-[10px]">BENCHMARK LATENCY</span>

@@ -304,7 +304,7 @@ function RegisterForm() {
 
       {/* Security disclosures */}
       <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] font-mono text-white/40">
-        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+        <ShieldCheck className="w-3.5 h-3.5 text-white/60" />
         <span>Enterprise GDPR Compliance / Zero Data Retention</span>
       </div>
     </div>

@@ -125,7 +125,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
             Deterministic AST rule checks and LLM security reasoning. Verified zero-execution environment.
           </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/18 bg-white/8 text-white/60 text-xs font-mono">
           <Lock className="w-3.5 h-3.5" />
           <span>Zero Execution Sandbox</span>
         </div>
@@ -183,8 +183,8 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
           </div>
           <RunStatusStepper status={currentStep} />
           <div className="text-xs text-white/60 font-mono bg-white/[0.02] p-4 rounded-xl border border-white/10 flex flex-col gap-1.5 leading-relaxed">
-            <div className="text-emerald-400">✓ Source parsed into abstract syntax tree (AST)</div>
-            <div className="text-emerald-400">✓ Semgrep and Bandit security linters dispatched</div>
+            <div className="text-white/60">✓ Source parsed into abstract syntax tree (AST)</div>
+            <div className="text-white/60">✓ Semgrep and Bandit security linters dispatched</div>
             <div className="text-white animate-pulse">⚙ LLM Security Reasoner analyzing dataflow and injection paths...</div>
             <div className="text-white/30">○ Triage agent deduplicating candidate findings...</div>
           </div>
@@ -292,7 +292,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({ onCreateReview, on
                 />
               </label>
               {fileName && (
-                <div className="text-xs font-mono text-emerald-400 mt-2">
+                <div className="text-xs font-mono text-white/60 mt-2">
                   Loaded: {fileName} ({code.length} characters)
                 </div>
               )}

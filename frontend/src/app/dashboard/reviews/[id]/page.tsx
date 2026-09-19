@@ -119,7 +119,7 @@ export default function ReviewDetailPage() {
   if (loading) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-white/70 space-y-3 font-mono text-xs">
-        <Loader2 className="w-7 h-7 animate-spin text-emerald-400" />
+        <Loader2 className="w-7 h-7 animate-spin text-white/60" />
         <p>Loading security review {reviewId}...</p>
       </div>
     );

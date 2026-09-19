@@ -15,7 +15,7 @@ export const SourceBadge: React.FC<SourceBadgeProps> = ({ source, toolName, size
     rule: {
       label: 'Rule',
       icon: Shield,
-      bg: 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400',
+      bg: 'bg-white/8 border-emerald-500/25 text-white/60',
     },
     tool: {
       label: toolName || 'Tool',
@@ -25,7 +25,7 @@ export const SourceBadge: React.FC<SourceBadgeProps> = ({ source, toolName, size
     agent: {
       label: 'Autonomous Agent',
       icon: Sparkles,
-      bg: 'bg-cyan-500/10 border-cyan-500/25 text-cyan-400',
+      bg: 'bg-white/8 border-cyan-500/25 text-white/60',
     },
     llm: {
       label: 'LLM Reasoner',

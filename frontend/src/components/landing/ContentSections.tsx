@@ -60,20 +60,20 @@ function GlowCard({ card, width }: GlowCardProps) {
       style={{
         width,
         background: hovered
-          ? 'linear-gradient(145deg, rgba(34,211,238,0.04) 0%, rgba(0,0,0,1) 70%)'
+          ? 'linear-gradient(145deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,1) 70%)'
           : '#000',
         border: hovered
-          ? '1px solid rgba(34,211,238,0.35)'
+          ? '1px solid rgba(255,255,255,0.12)'
           : '1px solid rgba(255,255,255,0.10)',
         boxShadow: hovered
-          ? '0 0 0 1px rgba(34,211,238,0.12), 0 0 20px 4px rgba(34,211,238,0.12), 0 0 60px 8px rgba(34,211,238,0.06)'
+          ? '0 0 0 1px rgba(255,255,255,0.06), 0 0 20px 4px rgba(255,255,255,0.06), 0 0 60px 8px rgba(255,255,255,0.03)'
           : '0 0 0 0 transparent',
         transition: 'box-shadow 300ms ease, border-color 300ms ease, background 300ms ease',
       }}
     >
       <div
         className="font-mono text-xs tracking-[0.15em] mb-3 transition-colors duration-300"
-        style={{ color: hovered ? 'rgba(34,211,238,0.7)' : 'rgba(255,255,255,0.35)' }}
+        style={{ color: hovered ? 'rgba(255,255,255,0.315)' : 'rgba(255,255,255,0.35)' }}
       >
         {card.num} // {card.tag}
       </div>
@@ -139,7 +139,7 @@ function FeatureCarousel() {
               style={{
                 width: i === activeIdx ? 20 : 6,
                 height: 6,
-                background: i === activeIdx ? 'rgba(34,211,238,0.9)' : 'rgba(255,255,255,0.2)',
+                background: i === activeIdx ? 'rgba(255,255,255,0.405)' : 'rgba(255,255,255,0.2)',
               }}
             />
           ))}
@@ -213,7 +213,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
 
       {/* 2. section#features — Core Capabilities Carousel */}
       <section id="features" className="py-24 px-6 md:px-12 border-t border-white/10 max-w-6xl mx-auto">
-        <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3">
+        <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-white/50 uppercase mb-3">
           HOW VIGIL WORKS
         </div>
         <h3 className="text-3xl sm:text-4xl font-normal tracking-tight text-white mb-12">
@@ -225,7 +225,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
 
       {/* 3. section#benchmarks — Verifiable Architectural Metrics */}
       <section id="benchmarks" className="py-24 px-6 md:px-12 border-t border-white/10 max-w-6xl mx-auto">
-        <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3">
+        <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-white/50 uppercase mb-3">
           VERIFIABLE METRICS
         </div>
         <h3 className="text-3xl sm:text-4xl font-normal tracking-tight text-white mb-12">
@@ -235,7 +235,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 font-mono text-center">
           <div className="p-6 border border-white/10 rounded-xl bg-black flex flex-col justify-center items-center">
             <div className="text-3xl md:text-4xl font-semibold text-white">3</div>
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-cyan-400/80 mt-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-white/50 mt-2">
               PYTHON · JS · TS
             </div>
             <div className="text-xs text-white/50 mt-1">Supported Languages</div>
@@ -243,7 +243,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
 
           <div className="p-6 border border-white/10 rounded-xl bg-black flex flex-col justify-center items-center">
             <div className="text-3xl md:text-4xl font-semibold text-white">13</div>
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-cyan-400/80 mt-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-white/50 mt-2">
               7 RULES + 6 ADAPTERS
             </div>
             <div className="text-xs text-white/50 mt-1">Detection Layers</div>
@@ -251,7 +251,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
 
           <div className="p-6 border border-white/10 rounded-xl bg-black flex flex-col justify-center items-center">
             <div className="text-3xl md:text-4xl font-semibold text-white">0</div>
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-cyan-400/80 mt-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-white/50 mt-2">
               ZERO EXECUTION
             </div>
             <div className="text-xs text-white/50 mt-1">Unsandboxed Runs</div>
@@ -261,7 +261,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
             <div className="text-3xl md:text-4xl font-semibold text-white">
               {reviewDurationText}
             </div>
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-cyan-400/80 mt-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] uppercase text-white/50 mt-2">
               MEDIAN REVIEW TIME
             </div>
             <div className="text-xs text-white/50 mt-1">{reviewDurationSubtitle}</div>
@@ -276,7 +276,7 @@ export const ContentSections: React.FC<ContentSectionsProps> = () => {
 
       {/* 4. section#testimonials — Customer & Partner Endorsements */}
       <section id="testimonials" className="py-24 px-6 md:px-12 border-t border-white/10 max-w-6xl mx-auto">
-        <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3">
+        <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-white/50 uppercase mb-3">
           CUSTOMER PROOF
         </div>
         <h3 className="text-3xl sm:text-4xl font-normal tracking-tight text-white mb-12">

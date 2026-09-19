@@ -31,7 +31,7 @@ export const PatchesView: React.FC<PatchesViewProps> = ({ onSelectReview }) => {
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/20 bg-white/5 text-xs font-mono text-white/80">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+          <ShieldCheck className="w-3.5 h-3.5 text-white/60" />
           <span>Automated Regression Safe</span>
         </div>
       </div>
@@ -64,8 +64,8 @@ export const PatchesView: React.FC<PatchesViewProps> = ({ onSelectReview }) => {
                 >
                   {copiedId === patch.id ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Copied</span>
+                      <Check className="w-3.5 h-3.5 text-white/60" />
+                      <span className="text-white/60">Copied</span>
                     </>
                   ) : (
                     <>
@@ -91,7 +91,7 @@ export const PatchesView: React.FC<PatchesViewProps> = ({ onSelectReview }) => {
             <div className="rounded-xl border border-white/10 bg-black overflow-hidden font-mono text-xs select-text">
               <div className="px-3.5 py-1.5 bg-white/[0.04] border-b border-white/10 text-[11px] text-white/50 flex justify-between">
                 <span>Unified Diff Patch</span>
-                <span className="text-emerald-400 font-sans flex items-center gap-1">
+                <span className="text-white/60 font-sans flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3" /> Syntax Verified
                 </span>
               </div>

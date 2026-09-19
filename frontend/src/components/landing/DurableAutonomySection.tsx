@@ -17,6 +17,144 @@ interface DurableAutonomySectionProps {
   onRequestDemo?: () => void;
 }
 
+/* ── Animated Triage Pipeline ─────────────────────────────────────── */
+const PIPELINE_STAGES = [
+  { label: 'TRIGGER',        title: 'PR #482 Open',   sub: 'GitHub Action',    color: 'rgba(255,255,255,0.65)', glow: 'rgba(255,255,255,0.13999999999999999)' },
+  { label: 'AST TAINT GRAPH',title: 'Taint Loaded',   sub: 'Python & TS AST',  color: 'rgba(255,255,255,0.60)', glow: 'rgba(255,255,255,0.147)'  },
+  { label: 'REASONER',       title: 'Triaging Risk',  sub: 'evidence verified', color: 'rgba(255,255,255,0.60)', glow: 'rgba(255,255,255,0.13999999999999999)'  },
+];
+
+function AnimatedPipeline() {
+  const [activeStage, setActiveStage] = React.useState(0);
+  const [travelling, setTravelling] = React.useState(false);
+
+  React.useEffect(() => {
+    const hold = setTimeout(() => {
+      setTravelling(true);
+      const travel = setTimeout(() => {
+        setTravelling(false);
+        setActiveStage(s => (s + 1) % PIPELINE_STAGES.length);
+      }, 650);
+      return () => clearTimeout(travel);
+    }, 1900);
+    return () => clearTimeout(hold);
+  }, [activeStage]);
+
+  return (
+    <div className="relative my-auto py-3">
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-0 relative">
+        {PIPELINE_STAGES.map((stage, i) => {
+          const isActive = activeStage === i;
+          const isLast   = i === PIPELINE_STAGES.length - 1;
+          const connectorActive = travelling && activeStage === i;
+          const connectorDone   = activeStage > i;
+
+          return (
+            <React.Fragment key={stage.label}>
+              {/* Stage block */}
+              <div
+                className="w-full sm:flex-1 rounded-xl p-3 text-center flex flex-col items-center justify-center min-h-[80px] relative overflow-hidden"
+                style={{
+                  border: isActive ? `1px solid ${stage.color}` : '1px solid rgba(255,255,255,0.10)',
+                  background: isActive
+                    ? `radial-gradient(ellipse 80% 50% at 50% 0%, ${stage.glow} 0%, transparent 70%), #000`
+                    : 'rgba(255,255,255,0.02)',
+                  boxShadow: isActive ? `0 0 28px 6px ${stage.glow}` : 'none',
+                  transition: 'all 0.5s ease',
+                }}
+              >
+                {/* Scan-line */}
+                {isActive && (
+                  <div
+                    style={{
+                      position: 'absolute', left: 0, right: 0, height: 1,
+                      background: `linear-gradient(90deg,transparent,${stage.color},transparent)`,
+                      animation: 'triageScan 1.4s linear infinite',
+                    }}
+                  />
+                )}
+                <span style={{ color: isActive ? stage.color : 'rgba(255,255,255,0.38)', transition: 'color 0.5s', fontSize: 9.5, letterSpacing: '0.13em', fontFamily: 'monospace', fontWeight: 600, textTransform: 'uppercase' }}>
+                  {stage.label}
+                </span>
+                <span style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginTop: 2 }}>
+                  {stage.title}
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.40)', fontSize: 9.5, fontFamily: 'monospace', marginTop: 2 }}>
+                  {stage.sub}
+                </span>
+                {isActive && (
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
+                    {[0, 150, 300].map(d => (
+                      <span key={d} style={{ width: 4, height: 4, borderRadius: '50%', background: stage.color, display: 'inline-block', animation: `bounce 0.8s ${d}ms infinite alternate` }} />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Connector */}
+              {!isLast && (
+                <div className="hidden sm:block relative flex-shrink-0 mx-1" style={{ width: 40, height: 20 }}>
+                  {/* Track */}
+                  <div style={{ position: 'absolute', top: '50%', left: 0, right: 16, height: 1, background: connectorDone ? stage.color : 'rgba(255,255,255,0.12)', transition: 'background 0.5s' }} />
+                  {/* Packet */}
+                  <div style={{
+                    position: 'absolute', top: 'calc(50% - 2px)',
+                    width: 10, height: 5, borderRadius: 3,
+                    background: stage.color,
+                    boxShadow: `0 0 8px 3px ${stage.glow}`,
+                    left: connectorDone ? 'calc(100% - 16px)' : connectorActive ? 'calc(100% - 16px)' : -14,
+                    transition: connectorActive ? 'left 0.55s cubic-bezier(0.4,0,0.2,1)' : 'none',
+                    opacity: isActive || connectorDone || connectorActive ? 1 : 0,
+                  }} />
+                  {/* Arrow */}
+                  <svg style={{ position:'absolute', right:0, top:'calc(50% - 5px)', width:12, height:10 }} viewBox="0 0 12 10" fill="none">
+                    <path d="M2 2l8 3-8 3" stroke={connectorDone ? stage.color : 'rgba(255,255,255,0.25)'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'stroke 0.5s' }} />
+                  </svg>
+                </div>
+              )}
+            </React.Fragment>
+          );
+        })}
+
+        {/* Agent status */}
+        <div className="w-full sm:w-[28%] flex flex-col gap-2 pt-2 sm:pt-0 sm:ml-2">
+          {[
+            { label: 'Security agent',  color: '#ffffff' },
+            { label: 'Quality agent',   color: 'rgba(255,255,255,0.60)' },
+            { label: 'Patch generator', color: 'rgba(255,255,255,0.65)' },
+          ].map((agent, idx) => {
+            const agentActive = idx === activeStage;
+            return (
+              <div key={agent.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'6px 12px', borderRadius:8, border: agentActive ? `1px solid ${agent.color}55` : '1px solid rgba(255,255,255,0.08)', background: agentActive ? `${agent.color}10` : 'rgba(255,255,255,0.015)', transition: 'all 0.5s ease', fontSize: 11.5 }}>
+                <span style={{ color: agentActive ? '#fff' : 'rgba(255,255,255,0.65)', transition: 'color 0.5s' }}>{agent.label}</span>
+                <span style={{ width:8, height:8, borderRadius:'50%', background: agent.color, boxShadow: agentActive ? `0 0 8px 3px ${agent.color}` : 'none', display:'inline-block', animation: agentActive ? 'agtPulse 1s infinite' : 'none', transition: 'box-shadow 0.5s' }} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes triageScan {
+          0%   { top: 0%;    opacity: 0; }
+          8%   { opacity: 1; }
+          92%  { opacity: 1; }
+          100% { top: 100%;  opacity: 0; }
+        }
+        @keyframes bounce {
+          from { transform: translateY(0);   }
+          to   { transform: translateY(-4px); }
+        }
+        @keyframes agtPulse {
+          0%, 100% { opacity: 1;   transform: scale(1);    }
+          50%      { opacity: 0.6; transform: scale(1.35); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+
 export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () => {
   const [activeDropdownRow, setActiveDropdownRow] = useState<string | null>(null);
   const [policyValues, setPolicyValues] = useState<Record<string, string>>({
@@ -73,7 +211,7 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div className="max-w-2xl">
-            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-cyan-400/80 uppercase mb-3 flex items-center gap-2">
+            <div className="text-xs md:text-sm font-mono tracking-[0.15em] text-white/50 uppercase mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
               <span>SECURITY RULES &amp; ENFORCEMENT</span>
             </div>
@@ -95,7 +233,7 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
 
               <div className="flex items-center justify-between text-[11px] font-mono select-none mb-6">
                 <div className="flex items-center gap-2 text-white/75 font-semibold tracking-wider uppercase">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                  <span className="w-2 h-2 rounded-full bg-white/30 animate-pulse " />
                   <span>TRIAGE MESH • LIVE</span>
                 </div>
                 <div className="text-white/40">
@@ -104,53 +242,7 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
               </div>
 
               <div className="relative my-auto py-3">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-2 relative">
-                  <div className="w-full sm:w-[26%] rounded-xl border border-white/10 bg-white/[0.03] p-3 text-center flex flex-col items-center justify-center min-h-[76px]">
-                    <span className="text-[9.5px] uppercase tracking-wider text-white/40 font-mono">TRIGGER</span>
-                    <span className="text-[13px] font-semibold text-white mt-0.5">PR #482 Open</span>
-                    <span className="text-[10px] text-white/40 font-mono mt-0.5">GitHub Action</span>
-                  </div>
-
-                  <div className="hidden sm:flex items-center text-white/30 text-[10px] select-none">
-                    &gt;
-                  </div>
-
-                  <div className="w-full sm:w-[30%] rounded-xl border border-white/10 bg-white/[0.03] p-3 text-center flex flex-col items-center justify-center min-h-[76px]">
-                    <span className="text-[9.5px] uppercase tracking-wider text-white/40 font-mono">AST TAINT GRAPH</span>
-                    <span className="text-[13px] font-semibold text-white mt-0.5">Taint Loaded</span>
-                    <span className="text-[10px] text-white/40 font-mono mt-0.5">Python & TS AST</span>
-                  </div>
-
-                  <div className="hidden sm:flex items-center text-white/30 text-[10px] select-none">
-                    &gt;
-                  </div>
-
-                  <div className="w-full sm:w-[32%] rounded-xl border border-white/60 bg-black p-3 text-center flex flex-col items-center justify-center min-h-[82px] shadow-[0_0_20px_rgba(255,255,255,0.08)]">
-                    <span className="text-[9.5px] uppercase tracking-wider text-white/60 font-mono font-semibold">REASONER</span>
-                    <span className="text-[13.5px] font-bold text-white mt-0.5">Triaging Risk</span>
-                    <div className="flex items-center gap-1 my-1">
-                      <span className="w-1 h-1 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <span className="w-1 h-1 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <span className="w-1 h-1 rounded-full bg-white/70 animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                    <span className="text-[9.5px] text-white/50 font-mono">evidence verified</span>
-                  </div>
-
-                  <div className="w-full sm:w-[30%] flex flex-col gap-2 pt-2 sm:pt-0">
-                    <div className="flex items-center justify-between px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] text-[11.5px]">
-                      <span className="text-white/80">Security agent</span>
-                      <span className="w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_6px_#f43f5e]" />
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] text-[11.5px]">
-                      <span className="text-white/80">Quality agent</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
-                    </div>
-                    <div className="flex items-center justify-between px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] text-[11.5px]">
-                      <span className="text-white/80">Patch generator</span>
-                      <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_#22d3ee]" />
-                    </div>
-                  </div>
-                </div>
+                <AnimatedPipeline />
               </div>
 
               <div className="mt-4 pt-3 border-t border-white/10 text-[11px] font-mono text-white/50 flex items-center gap-2">
@@ -173,7 +265,7 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
                 </div>
                 <div className="text-right">
                   <div className="text-[9.5px] uppercase tracking-wider text-white/40 font-mono">ISOLATION</div>
-                  <div className="text-[12px] sm:text-[13px] font-medium text-emerald-400 mt-1">gVisor VM</div>
+                  <div className="text-[12px] sm:text-[13px] font-medium text-white/60 mt-1">gVisor VM</div>
                 </div>
               </div>
             </div>
@@ -383,8 +475,8 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="relative w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <div className="relative w-8 h-8 rounded-lg bg-white/8 border border-white/18 flex items-center justify-center shrink-0 mt-0.5">
+                      <Sparkles className="w-4 h-4 text-white/60" />
                     </div>
                     <div>
                       <div className="text-[13px] font-medium text-white">CWE-89 Patch verified</div>
@@ -423,8 +515,8 @@ export const DurableAutonomySection: React.FC<DurableAutonomySectionProps> = () 
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="relative w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center shrink-0 mt-0.5">
-                      <Zap className="w-4 h-4 text-cyan-400" />
+                    <div className="relative w-8 h-8 rounded-lg bg-white/8 border border-white/18 flex items-center justify-center shrink-0 mt-0.5">
+                      <Zap className="w-4 h-4 text-white/60" />
                     </div>
                     <div>
                       <div className="text-[13px] font-medium text-white">MicroVM Regression Gate Passed</div>

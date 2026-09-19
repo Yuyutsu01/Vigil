@@ -136,7 +136,7 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
             className="group relative px-4 py-2 rounded-full text-xs font-mono tracking-wider text-zinc-200 hover:text-white uppercase border border-white/20 bg-white/[0.04] hover:bg-white/[0.12] hover:border-white/40 transition-all duration-200 shadow-sm hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
           >
             <span className="relative z-10 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" />
               SecOps Console
             </span>
             <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.15] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -257,7 +257,7 @@ export default function Navbar({ onGetStarted, onLinkClick }: NavbarProps) {
             <Link
               href="/dashboard"
               onClick={() => setOpen(false)}
-              className="font-mono text-sm uppercase tracking-wider text-emerald-400 pt-2"
+              className="font-mono text-sm uppercase tracking-wider text-white/60 pt-2"
             >
               Launch SecOps Console →
             </Link>

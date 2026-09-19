@@ -28,7 +28,7 @@ export const EvaluationView: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03] flex flex-col justify-between">
           <div className="text-xs text-white/50">Overall Precision</div>
-          <div className="text-3xl font-bold font-mono text-emerald-400 mt-2">
+          <div className="text-3xl font-bold font-mono text-white/60 mt-2">
             {(bench.overallPrecision * 100).toFixed(1)}%
           </div>
           <div className="text-[11px] text-white/40 mt-2 font-mono">
@@ -49,14 +49,14 @@ export const EvaluationView: React.FC = () => {
           <div className="text-3xl font-bold font-mono text-white mt-2">
             {bench.f1Score.toFixed(3)}
           </div>
-          <div className="text-[11px] text-emerald-400 mt-2 font-mono flex items-center gap-1">
+          <div className="text-[11px] text-white/60 mt-2 font-mono flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
             <span>SOTA for multi-agent linters</span>
           </div>
         </div>
         <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03] flex flex-col justify-between">
           <div className="text-xs text-white/50">False Positive Rate</div>
-          <div className="text-3xl font-bold font-mono text-emerald-400 mt-2">
+          <div className="text-3xl font-bold font-mono text-white/60 mt-2">
             {(bench.falsePositiveRate * 100).toFixed(1)}%
           </div>
           <div className="text-[11px] text-white/40 mt-2 font-mono">
@@ -90,11 +90,11 @@ export const EvaluationView: React.FC = () => {
               <div className="flex-1 max-w-xs flex flex-col gap-1">
                 <div className="flex justify-between text-[11px] font-mono text-white/60">
                   <span>Accuracy</span>
-                  <span className="text-emerald-400 font-bold">{(item.accuracy * 100).toFixed(0)}%</span>
+                  <span className="text-white/60 font-bold">{(item.accuracy * 100).toFixed(0)}%</span>
                 </div>
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-emerald-400 rounded-full"
+                    className="h-full bg-white/30 rounded-full"
                     style={{ width: `${item.accuracy * 100}%` }}
                   />
                 </div>
@@ -111,7 +111,7 @@ export const EvaluationView: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-white/40">FP: </span>
-                  <span className="text-emerald-400 font-bold">{(item.falsePositiveRate * 100).toFixed(1)}%</span>
+                  <span className="text-white/60 font-bold">{(item.falsePositiveRate * 100).toFixed(1)}%</span>
                 </div>
               </div>
             </div>
@@ -120,7 +120,7 @@ export const EvaluationView: React.FC = () => {
       </div>
 
       <div className="p-4 rounded-xl border border-white/10 bg-white/[0.02] flex items-start gap-3 text-xs text-white/70">
-        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+        <ShieldCheck className="w-4 h-4 text-white/60 shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <strong className="text-white">Reproducibility Guarantee:</strong> Every evaluation run is executed
           in an isolated environment against frozen test sets. Synthetic test harness seeds are pinned to prevent data contamination.

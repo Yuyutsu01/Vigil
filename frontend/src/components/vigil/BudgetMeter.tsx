@@ -29,7 +29,7 @@ export const BudgetMeter: React.FC<BudgetMeterProps> = ({ budget, compact = fals
         </div>
         <span className="text-white/20">|</span>
         <div className="flex items-center gap-1.5 text-white/80">
-          <Coins className="w-3 h-3 text-emerald-400" />
+          <Coins className="w-3 h-3 text-white/60" />
           <span>${budget.costUsed.toFixed(2)}</span>
         </div>
         <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden ml-1">
@@ -56,7 +56,7 @@ export const BudgetMeter: React.FC<BudgetMeterProps> = ({ budget, compact = fals
           <Cpu className="w-3.5 h-3.5 text-white/80" />
           Execution Budget Control
         </span>
-        <span className="font-mono text-emerald-400 text-[11px]">Enforced Limit</span>
+        <span className="font-mono text-white/60 text-[11px]">Enforced Limit</span>
       </div>
       <div className="grid grid-cols-3 gap-3">
         {/* Tokens */}
@@ -81,7 +81,7 @@ export const BudgetMeter: React.FC<BudgetMeterProps> = ({ budget, compact = fals
           </div>
           <div className="w-full h-1 bg-white/10 rounded-full mt-2 overflow-hidden">
             <div
-              className="h-full bg-emerald-400 rounded-full"
+              className="h-full bg-white/30 rounded-full"
               style={{
                 width: `${Math.min(100, (budget.costUsed / budget.costLimit) * 100)}%`,
               }}

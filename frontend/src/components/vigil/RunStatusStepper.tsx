@@ -46,12 +46,12 @@ export const RunStatusStepper: React.FC<RunStatusStepperProps> = ({ status }) =>
                   isCurrent
                     ? 'bg-white/10 text-white font-medium border border-white/20'
                     : isDone
-                    ? 'text-emerald-400 font-normal'
+                    ? 'text-white/60 font-normal'
                     : 'text-white/30'
                 }`}
               >
                 {isDone ? (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-white/60 shrink-0" />
                 ) : isCurrent ? (
                   <Loader2 className="w-3.5 h-3.5 text-white animate-spin shrink-0" />
                 ) : (

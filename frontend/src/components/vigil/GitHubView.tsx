@@ -51,7 +51,7 @@ function RepositoryCard({
         </div>
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <h3 className="font-semibold text-sm text-white hover:text-cyan-400 transition-colors">
+            <h3 className="font-semibold text-sm text-white hover:text-white/60 transition-colors">
               {repoName}
             </h3>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono text-zinc-300">
@@ -63,13 +63,13 @@ function RepositoryCard({
               aria-label={isConnected ? 'Active' : 'Paused'}
               className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-mono ${
                 isConnected
-                  ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
+                  ? 'bg-white/8 border border-white/18 text-white/60'
                   : 'bg-zinc-500/10 border border-zinc-500/30 text-zinc-400'
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'
+                  isConnected ? 'bg-white/30 animate-pulse' : 'bg-zinc-500'
                 }`}
                 aria-hidden="true"
               />
@@ -79,7 +79,7 @@ function RepositoryCard({
 
           <div className="text-[11px] text-white/40 font-mono mt-1.5 flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <Shield className="w-3 h-3 text-emerald-400/80" aria-hidden="true" />
+              <Shield className="w-3 h-3 text-white/60/80" aria-hidden="true" />
               PR Automated Gating
             </span>
             {repo.created_at && (
@@ -102,7 +102,7 @@ function RepositoryCard({
           onClick={onTriggerReview}
           disabled={triggering || !isConnected}
           aria-label={`Trigger review for ${repoName}`}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${focusRing}`}
+          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white/8 hover:bg-white/12 text-white/75 border border-white/18 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${focusRing}`}
         >
           {triggering ? (
             <>
@@ -300,16 +300,16 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
       {successBanner && (
         <div
           role="status"
-          className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs flex items-center justify-between gap-3"
+          className="p-4 rounded-xl border border-white/18 bg-white/8 text-white/70 text-xs flex items-center justify-between gap-3"
         >
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" aria-hidden="true" />
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-white/60" aria-hidden="true" />
             <span>{successBanner}</span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessBanner(null)}
-            className="text-emerald-400/60 hover:text-emerald-300 font-mono text-xs px-2 py-0.5 rounded cursor-pointer"
+            className="text-white/60/60 hover:text-white/70 font-mono text-xs px-2 py-0.5 rounded cursor-pointer"
           >
             Dismiss
           </button>
@@ -340,7 +340,7 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
       {loading ? (
         <div className="space-y-3" aria-busy="true" aria-live="polite">
           <div className="text-xs text-white/50 font-mono mb-2 flex items-center gap-2">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" aria-hidden="true" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-white/60" aria-hidden="true" />
             <span>Loading repositories…</span>
           </div>
           {[1, 2, 3].map((i) => (
@@ -386,8 +386,8 @@ function GitHubViewContent({ onSelectReview }: GitHubViewProps) {
             <div className="text-xs font-mono text-white/60 uppercase tracking-wider">
               {repos.length} {repos.length === 1 ? 'Repository Connected' : 'Repositories Connected'}
             </div>
-            <div className="text-xs font-mono text-emerald-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
+            <div className="text-xs font-mono text-white/60 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-white/30 animate-pulse" aria-hidden="true" />
               <span>CI Automated Triage Ready</span>
             </div>
           </div>
