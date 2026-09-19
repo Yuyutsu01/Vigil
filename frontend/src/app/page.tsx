@@ -6,7 +6,7 @@ import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import { ContentSections } from '@/components/landing/ContentSections';
 import { ProductShowcase } from '@/components/landing/ProductShowcase';
-import { StatefulExecutionSection } from '@/components/landing/StatefulExecutionSection';
+
 import { DurableAutonomySection } from '@/components/landing/DurableAutonomySection';
 import { AgentInsightsSection } from '@/components/landing/AgentInsightsSection';
 import { CelestialCTASection } from '@/components/landing/CelestialCTASection';
@@ -70,11 +70,6 @@ export default function LandingPage() {
           onOpenDemo={handleOpenDemo}
         />
 
-        {/* 5. Pipeline Execution Engine (#execution) */}
-        <StatefulExecutionSection
-          onGetStarted={handleGetStarted}
-          onRequestDemo={handleOpenDemo}
-        />
 
         {/* 6. Verification & CI/CD Governance (#verification) */}
         <DurableAutonomySection
