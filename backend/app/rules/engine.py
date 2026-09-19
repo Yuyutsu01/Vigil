@@ -78,6 +78,8 @@ _SECRET_PATTERNS = [
     (re.compile(r"gh[pos]_[A-Za-z0-9]{36,}"), "GitHub Token"),
     # OpenAI keys
     (re.compile(r"sk-[A-Za-z0-9]{48}"), "OpenAI API Key"),
+    # Generic / Test Secret tokens
+    (re.compile(r"\b(sk|pk|rk)_(live|test)_[A-Za-z0-9_\-]{8,}"), "API Secret Key"),
     # Slack tokens
     (re.compile(r"xox[baprs]-[A-Za-z0-9\-]+"), "Slack Token"),
     # Stripe keys
@@ -85,8 +87,8 @@ _SECRET_PATTERNS = [
 ]
 
 _SECRET_VAR_NAMES = re.compile(
-    r"\b(password|passwd|pwd|secret|api_key|apikey|auth_token|access_token|"
-    r"private_key|credential|token|key|auth)\b",
+    r"\b(password|passwd|pwd|db_password|secret|api_key|apikey|auth_token|access_token|"
+    r"private_key|credential|token|secret_key|jwt_secret)\b",
     re.IGNORECASE,
 )
 
@@ -107,7 +109,7 @@ def _detect_secrets(source: str, language: str, rule: SkillRule) -> List[Detecte
     lines = source.splitlines()
 
     for line_num, line in enumerate(lines, 1):
-        # Check known token patterns
+        # 1. Check known token patterns
         for pattern, token_type in _SECRET_PATTERNS:
             m = pattern.search(line)
             if m:
@@ -130,33 +132,35 @@ def _detect_secrets(source: str, language: str, rule: SkillRule) -> List[Detecte
                     end_col=m.end() + 1,
                 ))
 
-        # Check high-entropy strings in sensitive variable assignments
-        # Pattern: varname = "long_string"
+        # 2. Check sensitive variable assignments: VAR_NAME = "literal_string"
         assign_match = re.search(
-            r'(["\'])((?:(?!\1).){20,})\1', line
+            r'^\s*([A-Za-z0-9_]+)\s*=\s*(["\'])(.+?)\2\s*$', line
         )
         if assign_match:
-            var_context = line[:assign_match.start()]
-            if _SECRET_VAR_NAMES.search(var_context):
-                candidate = assign_match.group(2)
-                if _shannon_entropy(candidate) >= 4.5 and len(candidate) >= 20:
-                    findings.append(DetectedFinding(
-                        rule_id=rule.rule_id,
-                        category=rule.category,
-                        severity=rule.severity,
-                        confidence=0.75,
-                        title="High-entropy string in sensitive variable",
-                        rationale="A high-entropy string is assigned to a variable with a "
-                                   "credential-like name, suggesting a hardcoded secret.",
-                        remediation=rule.remediation_template,
-                        evidence_kind=EvidenceKind.token_regex,
-                        ast_path=f"line_{line_num}/entropy_assignment",
-                        matched_text=candidate[:200],
-                        start_line=line_num,
-                        start_col=assign_match.start() + 1,
-                        end_line=line_num,
-                        end_col=assign_match.end() + 1,
-                    ))
+            var_name = assign_match.group(1)
+            val_literal = assign_match.group(3).strip()
+            if _SECRET_VAR_NAMES.search(var_name) and len(val_literal) >= 3:
+                # Exclude obvious mock placeholders or env references
+                if not (val_literal.startswith("os.getenv") or val_literal.startswith("process.env") or val_literal.lower() in {"none", "false", "true", "null", ""}):
+                    # Avoid duplicate if already matched by pattern
+                    if not any(f.start_line == line_num for f in findings):
+                        findings.append(DetectedFinding(
+                            rule_id=rule.rule_id,
+                            category=rule.category,
+                            severity=rule.severity,
+                            confidence=0.90,
+                            title=f"Hardcoded credential in '{var_name}'",
+                            rationale=f"A hardcoded literal value was assigned to sensitive variable `{var_name}`. "
+                                       "Secrets should be retrieved from environment variables or secret managers.",
+                            remediation=rule.remediation_template,
+                            evidence_kind=EvidenceKind.token_regex,
+                            ast_path=f"line_{line_num}/sensitive_assignment",
+                            matched_text=line.strip()[:200],
+                            start_line=line_num,
+                            start_col=assign_match.start() + 1,
+                            end_line=line_num,
+                            end_col=assign_match.end() + 1,
+                        ))
 
     return findings
 
@@ -238,8 +242,47 @@ def _detect_unsafe_eval_js(source: str, rule: SkillRule) -> List[DetectedFinding
 
 def _detect_injection_python(tree: ast.AST, source: str, rule: SkillRule) -> List[DetectedFinding]:
     findings: List[DetectedFinding] = []
+    tainted_query_vars: set[str] = set()
 
     class InjectionVisitor(ast.NodeVisitor):
+        def visit_Assign(self, node: ast.Assign) -> None:
+            # Detect variable assignments like: query = "SELECT ... " + username or query = f"SELECT ... {username}"
+            is_dynamic_sql = False
+            if isinstance(node.value, (ast.JoinedStr, ast.BinOp, ast.Mod)):
+                # Check if it contains SQL keywords
+                try:
+                    for sub in ast.walk(node.value):
+                        if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+                            upper_val = sub.value.upper()
+                            if any(kw in upper_val for kw in ["SELECT ", "INSERT INTO ", "UPDATE ", "DELETE FROM ", "WHERE "]):
+                                is_dynamic_sql = True
+                                break
+                except Exception:
+                    pass
+
+            if is_dynamic_sql:
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        tainted_query_vars.add(target.id)
+                findings.append(DetectedFinding(
+                    rule_id=rule.rule_id,
+                    category=rule.category,
+                    severity=rule.severity,
+                    confidence=0.90,
+                    title="SQL injection risk: unsanitized query formatting",
+                    rationale="String formatting or concatenation used to construct an SQL query dynamically. "
+                               "Parameterized query placeholders must be used instead.",
+                    remediation=rule.remediation_template,
+                    evidence_kind=EvidenceKind.ast_node,
+                    ast_path="Assign[dynamic_sql_query]",
+                    matched_text="SQL query string built dynamically",
+                    start_line=node.lineno,
+                    start_col=node.col_offset + 1,
+                    end_line=getattr(node, "end_lineno", node.lineno),
+                    end_col=getattr(node, "end_col_offset", None),
+                ))
+            self.generic_visit(node)
+
         def visit_Call(self, node: ast.Call) -> None:
             # OS injection: subprocess with shell=True
             if isinstance(node.func, ast.Attribute):
@@ -281,26 +324,30 @@ def _detect_injection_python(tree: ast.AST, source: str, rule: SkillRule) -> Lis
                             start_col=node.col_offset + 1,
                         ))
 
-                # SQL injection: cursor.execute / connection.execute with f-string or concatenation
+                # SQL injection: cursor.execute / connection.execute with f-string or concatenation or tainted variable
                 if node.func.attr in {"execute", "executemany"}:
                     if node.args:
                         arg0 = node.args[0]
-                        if isinstance(arg0, (ast.JoinedStr, ast.BinOp, ast.Mod)):
-                            findings.append(DetectedFinding(
-                                rule_id=rule.rule_id,
-                                category=rule.category,
-                                severity=rule.severity,
-                                confidence=0.85,
-                                title="SQL injection risk: dynamic query in execute()",
-                                rationale="String formatting/concatenation used to build SQL query. "
-                                           "Parameterized queries must be used instead.",
-                                remediation=rule.remediation_template,
-                                evidence_kind=EvidenceKind.ast_node,
-                                ast_path=f"Call[func=.{node.func.attr}][arg=dynamic_string]",
-                                matched_text=".execute(dynamic_string)",
-                                start_line=node.lineno,
-                                start_col=node.col_offset + 1,
-                            ))
+                        is_inline_dynamic = isinstance(arg0, (ast.JoinedStr, ast.BinOp, ast.Mod))
+                        is_var_dynamic = isinstance(arg0, ast.Name) and arg0.id in tainted_query_vars
+                        if is_inline_dynamic or is_var_dynamic:
+                            # Avoid duplicate if already reported on assignment
+                            if not any(f.start_line == node.lineno for f in findings):
+                                findings.append(DetectedFinding(
+                                    rule_id=rule.rule_id,
+                                    category=rule.category,
+                                    severity=rule.severity,
+                                    confidence=0.85,
+                                    title="SQL injection risk: dynamic query in execute()",
+                                    rationale="String formatting/concatenation used to build SQL query. "
+                                               "Parameterized queries must be used instead.",
+                                    remediation=rule.remediation_template,
+                                    evidence_kind=EvidenceKind.ast_node,
+                                    ast_path=f"Call[func=.{node.func.attr}][arg=dynamic_string]",
+                                    matched_text=".execute(dynamic_string)",
+                                    start_line=node.lineno,
+                                    start_col=node.col_offset + 1,
+                                ))
             self.generic_visit(node)
 
     InjectionVisitor().visit(tree)
