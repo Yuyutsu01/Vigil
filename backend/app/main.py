@@ -135,9 +135,9 @@ app.state.sandbox_available = True
 #   5. Endpoint dependencies & handlers (get_auth_context validates and enforces authorization)
 #
 # Response path order is the reverse of request path order.
-app.add_middleware(AuthContextMiddleware)
-app.add_middleware(RateLimitMiddleware)
 app.add_middleware(IdempotencyMiddleware)
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(AuthContextMiddleware)
 
 # CORSMiddleware registered LAST so it wraps as the outermost layer and intercepts all preflights
 cors_list = list(settings.cors_origins) if isinstance(settings.cors_origins, list) else [settings.cors_origins]

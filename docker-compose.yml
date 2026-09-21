@@ -60,6 +60,7 @@ services:
     volumes:
       - ./secrets:/app/secrets:ro
       - ./prompts:/prompts:ro
+      - ./skills:/skills:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,6 +94,7 @@ services:
     volumes:
       - ./secrets:/app/secrets:ro
       - ./prompts:/prompts:ro
+      - ./skills:/skills:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -15,8 +15,22 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+def _resolve_skills_dir() -> Path:
+    candidates = [
+        Path(__file__).parents[3] / "skills",
+        Path("/skills"),
+        Path("/app/skills"),
+        Path.cwd() / "skills",
+        Path(__file__).parents[2] / "skills",
+    ]
+    for c in candidates:
+        if c.exists() and any(c.glob("*.md")):
+            return c
+    return candidates[0]
+
+
 # Path to the skills directory (relative to project root)
-SKILLS_DIR = Path(__file__).parents[3] / "skills"
+SKILLS_DIR = _resolve_skills_dir()
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 
