@@ -93,7 +93,9 @@ export const mockApi = {
 
   async submitReview(data: ReviewRequest): Promise<ReviewRunResponse> {
     logMock('/v1/reviews', { language: data.language });
-    return { run_id: 'run-mock-' + Date.now().toString().slice(-4), status: 'queued' };
+    // TODO(phase-1-blocker): replace with real API call when backend is running.
+    // Returns the seeded review ID so the review workspace loads real mock data.
+    return { run_id: 'rev-a1b2', status: 'queued' };
   },
 
   async getReview(runId: string): Promise<Review> {
