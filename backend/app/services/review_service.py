@@ -10,7 +10,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -387,3 +387,77 @@ async def get_tool_findings(
         .order_by(ToolFinding.created_at.asc())
     )
     return list(result.scalars().all())
+
+
+async def list_review_runs(
+    db: AsyncSession,
+    tenant_id: uuid.UUID,
+    limit: int = 20,
+    offset: int = 0,
+    status_filter: Optional[ReviewStatus] = None,
+) -> tuple[list[ReviewRun], int, dict[uuid.UUID, dict[str, int]]]:
+    """
+    Returns (runs, total_count, severity_counts_by_run_id).
+    - Two queries: page of ReviewRuns+SourceArtifacts, and one aggregate
+      for severity counts across the page's run_ids.
+    - Excludes status=deleted always.
+    - Orders by started_at DESC NULLS LAST, then run_id for stability.
+    """
+    count_stmt = (
+        select(func.count(ReviewRun.run_id))
+        .where(
+            ReviewRun.tenant_id == tenant_id,
+            ReviewRun.status != ReviewStatus.deleted,
+        )
+    )
+    if status_filter is not None:
+        count_stmt = count_stmt.where(ReviewRun.status == status_filter)
+
+    count_res = await db.execute(count_stmt)
+    total_count = count_res.scalar() or 0
+
+    data_stmt = (
+        select(ReviewRun)
+        .options(selectinload(ReviewRun.source_artifact))
+        .where(
+            ReviewRun.tenant_id == tenant_id,
+            ReviewRun.status != ReviewStatus.deleted,
+        )
+    )
+    if status_filter is not None:
+        data_stmt = data_stmt.where(ReviewRun.status == status_filter)
+
+    data_stmt = (
+        data_stmt
+        .order_by(ReviewRun.started_at.desc().nullslast(), ReviewRun.run_id.asc())
+        .limit(limit)
+        .offset(offset)
+    )
+    data_res = await db.execute(data_stmt)
+    runs = list(data_res.scalars().all())
+
+    severity_counts_by_run: dict[uuid.UUID, dict[str, int]] = {}
+    if runs:
+        run_ids = [r.run_id for r in runs]
+        for r in runs:
+            severity_counts_by_run[r.run_id] = {
+                "critical": 0,
+                "high": 0,
+                "medium": 0,
+                "low": 0,
+                "info": 0,
+            }
+
+        sev_stmt = (
+            select(Finding.run_id, Finding.severity, func.count(Finding.finding_id))
+            .where(Finding.run_id.in_(run_ids), Finding.tenant_id == tenant_id)
+            .group_by(Finding.run_id, Finding.severity)
+        )
+        sev_res = await db.execute(sev_stmt)
+        for row in sev_res.all():
+            r_id, sev, count = row
+            sev_key = sev.value.lower() if hasattr(sev, "value") else str(sev).lower()
+            if r_id in severity_counts_by_run and sev_key in severity_counts_by_run[r_id]:
+                severity_counts_by_run[r_id][sev_key] = count
+
+    return runs, total_count, severity_counts_by_run

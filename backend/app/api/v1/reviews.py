@@ -12,16 +12,21 @@ import json
 import logging
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from typing import Optional
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import AuthContext, get_auth_context, get_db
 from app.models.finding import FindingFeedback
+from app.models.review import AuditAction, ReviewStatus
 from app.schemas.finding import FeedbackRequest, FeedbackResponse, FindingSchema, EvidenceSchema, SourceRangeSchema
 from app.schemas.review import (
     DeleteReviewResponse,
     ReviewCreateRequest,
     ReviewCreateResponse,
+    ReviewListItem,
+    ReviewListResponse,
     ReviewRunResponse,
 )
 from app.services.audit_service import record_audit_event
@@ -29,8 +34,8 @@ from app.services.review_service import (
     create_and_run_review,
     delete_review_run,
     get_review_run,
+    list_review_runs,
 )
-from app.models.review import AuditAction
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +57,7 @@ async def create_review(
     db: AsyncSession = Depends(get_db),
 ) -> ReviewCreateResponse:
     """
-    Submit Python, JavaScript, or TypeScript code (≤250 KB, UTF-8) for review.
+    Submit Python, JavaScript, or TypeScript code (UTF-8) for review.
     Content-Type must be application/json. For file uploads, use POST /v1/uploads first.
     Returns a run_id immediately; polling GET /v1/reviews/{run_id} for results.
     """
@@ -141,6 +146,76 @@ async def create_review(
             logger.warning("Idempotency store write failed: %s", e)
 
     return ReviewCreateResponse(run_id=run.run_id, status=run.status)
+
+
+# ─── GET /v1/reviews ─────────────────────────────────────────────────────────
+
+@router.get(
+    "",
+    response_model=ReviewListResponse,
+    summary="List review runs for tenant",
+)
+async def list_reviews(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    status_param: Optional[str] = Query(None, alias="status"),
+    auth: AuthContext = Depends(get_auth_context),
+    db: AsyncSession = Depends(get_db),
+) -> ReviewListResponse:
+    """
+    List review runs for the authenticated tenant with pagination and optional status filter.
+    Soft-deleted runs are excluded.
+    """
+    status_filter: Optional[ReviewStatus] = None
+    if status_param is not None:
+        if status_param.lower() == "deleted":
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "invalid_status", "message": "status=deleted is not listable"},
+            )
+        try:
+            status_filter = ReviewStatus(status_param.lower())
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={"code": "invalid_status", "message": f"Invalid status filter: {status_param}"},
+            )
+
+    runs, total, severity_map = await list_review_runs(
+        db=db,
+        tenant_id=auth.tenant_id,
+        limit=limit,
+        offset=offset,
+        status_filter=status_filter,
+    )
+
+    items = []
+    for r in runs:
+        sev_counts = severity_map.get(
+            r.run_id,
+            {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0},
+        )
+        total_findings = sum(sev_counts.values())
+        lang = r.source_artifact.language if r.source_artifact else "unknown"
+        items.append(
+            ReviewListItem(
+                run_id=r.run_id,
+                status=r.status,
+                language=lang,
+                started_at=r.started_at,
+                completed_at=r.completed_at,
+                legal_hold=r.legal_hold,
+                finding_count=total_findings,
+                severity_counts=sev_counts,
+            )
+        )
+
+    return ReviewListResponse(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 # ─── GET /v1/reviews/{run_id} ────────────────────────────────────────────────

@@ -23,7 +23,7 @@ class ReviewCreateRequest(BaseModel):
     language: str = Field(description="python | javascript | typescript")
     source_text: Optional[str] = Field(
         default=None,
-        description="Pasted source code (up to 250 KB UTF-8).",
+        description="Pasted source code UTF-8.",
     )
     # upload_id references a completed POST /v1/uploads session
     upload_id: Optional[uuid.UUID] = Field(default=None)
@@ -40,9 +40,10 @@ class ReviewCreateRequest(BaseModel):
     @field_validator("source_text")
     @classmethod
     def validate_source_text(cls, v: Optional[str]) -> Optional[str]:
-        # Maximum allowed size is 250 KB (250 * 1024 bytes) per FR-001
-        if v is not None and len(v.encode("utf-8")) > 250 * 1024:
-            raise ValueError("source_text exceeds 250 KB limit")
+        from app.config import get_settings
+        max_bytes = get_settings().max_upload_bytes
+        if v is not None and len(v.encode("utf-8")) > max_bytes:
+            raise ValueError(f"source_text exceeds {max_bytes // 1024} KB limit ({max_bytes} bytes)")
         return v
 
 
@@ -74,18 +75,41 @@ class DeleteReviewResponse(BaseModel):
     audit_id: uuid.UUID
 
 
+class ReviewListItem(BaseModel):
+    run_id: uuid.UUID
+    status: ReviewStatus
+    language: str
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    legal_hold: bool = False
+    finding_count: int = 0
+    severity_counts: dict[str, int] = Field(default_factory=dict)
+
+    model_config = {"from_attributes": True}
+
+
+class ReviewListResponse(BaseModel):
+    items: list[ReviewListItem]
+    total: int
+    limit: int
+    offset: int
+
+
+def _default_upload_constraints() -> dict:
+    from app.config import get_settings
+    return {
+        "max_bytes": get_settings().max_upload_bytes,
+        "allowed_media_types": [
+            "application/x-python",
+            "text/x-python",
+            "text/javascript",
+            "application/javascript",
+            "application/typescript",
+            "text/typescript",
+        ],
+    }
+
+
 class UploadCreateResponse(BaseModel):
     upload_id: uuid.UUID
-    constraints: dict = Field(
-        default={
-            "max_bytes": 256 * 1024,
-            "allowed_media_types": [
-                "application/x-python",
-                "text/x-python",
-                "text/javascript",
-                "application/javascript",
-                "application/typescript",
-                "text/typescript",
-            ],
-        }
-    )
+    constraints: dict = Field(default_factory=_default_upload_constraints)
