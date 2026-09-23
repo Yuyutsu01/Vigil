@@ -29,6 +29,15 @@ from app.models.tenant import Tenant, User
 from app.services.auth_service import create_access_token
 
 
+@pytest.fixture(autouse=True)
+def _force_mock_provider(monkeypatch):
+    from app.agents.llm_provider import MockProvider
+    monkeypatch.setattr(
+        "app.agents.patch_agent.get_provider",
+        lambda *args, **kwargs: MockProvider(),
+    )
+
+
 @pytest.fixture
 def mock_redis():
     class FakeRedis:

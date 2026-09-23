@@ -10,12 +10,15 @@ from __future__ import annotations
 import hashlib
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Type
+from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 
 from app.schemas.finding import RawLLMFinding, RawLLMResponse
 from app.models.finding import EvidenceKind, Severity
+from app.errors import ConfigurationError
+# Module-level import for test patching target: app.agents.llm_provider.get_settings
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +103,43 @@ class MockProvider(ModelProvider):
         return RawLLMResponse(findings=[])
 
 
+class RulesOnlyProvider(ModelProvider):
+    """
+    Deterministic rules-only provider for environments without active LLM keys.
+    Operates strictly via deterministic AST static analyzers and rule engines.
+    Does not execute LLM inference or synthesize artificial findings.
+    """
+
+    @property
+    def provider_name(self) -> str:
+        return "rules_only"
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: Type[BaseModel],
+    ) -> Any:
+        """
+        Return an empty structured response conforming to the requested schema
+        without running or mocking LLM inference.
+        """
+        if schema.__name__ == "PatchDraft":
+            return schema(
+                unified_diff="",
+                rationale="Rules-only mode active; no automated LLM patch generated.",
+                assumptions="",
+                tests_to_run=[],
+            )
+
+        if schema.__name__ == "PRReviewDraftOutput":
+            return schema(
+                summary_markdown="### Vigil Rules-Only Review\n\nDeterministic rule-based scan completed without LLM synthesis.",
+                comments=[],
+            )
+
+        return RawLLMResponse(findings=[])
+
+
 class GroqProvider(ModelProvider):
     """
     Live Groq LLM provider utilizing OpenAI-compatible API specifications.
@@ -159,7 +199,9 @@ class GroqProvider(ModelProvider):
 
         import json
         content = response.choices[0].message.content or "{}"
+        logger.debug("Groq raw response: %s", content)
         data = json.loads(content)
+        logger.debug("Groq parsed response: %s", data)
         return schema(**data)
 
 
@@ -201,53 +243,45 @@ class OpenAIProvider(ModelProvider):
             data = json.loads(content[start:end])
             return schema(**data)
         except Exception as e:
-            logger.error("OpenAI provider error: %s", e)
+            logger.error("OpenAI provider error: %s", e, exc_info=True)
             return schema()
 
 
 def get_provider(provider_name: Optional[str] = None, **kwargs) -> ModelProvider:
-    """Factory: return the configured ModelProvider with safe fallbacks."""
+    """Factory: return the configured ModelProvider with strict validation."""
+    try:
+        settings = get_settings()
+    except Exception as exc:
+        raise ConfigurationError(f"Failed to load settings: {exc}") from exc
+
     if provider_name is None:
-        try:
-            from app.config import get_settings
-            settings = get_settings()
-            provider_name = settings.llm_provider
-            if "api_key" not in kwargs:
-                if provider_name == "groq":
-                    kwargs["api_key"] = settings.groq_api_key
-                elif provider_name == "openai":
-                    kwargs["api_key"] = settings.openai_api_key
-        except Exception:
-            provider_name = "mock"
+        provider_name = settings.llm_provider
+
+    if provider_name == "rules_only":
+        return RulesOnlyProvider()
 
     if provider_name == "mock":
+        if settings.environment == "production":
+            raise ConfigurationError("MockProvider is forbidden in production")
         return MockProvider()
-    elif provider_name == "groq":
-        api_key = kwargs.get("api_key", "")
+
+    if provider_name == "groq":
+        api_key = kwargs.get("api_key") or settings.groq_api_key
         if not api_key:
-            try:
-                from app.config import get_settings
-                api_key = get_settings().groq_api_key
-            except Exception:
-                api_key = ""
-        if not api_key:
-            logger.warning(
-                "VIGIL_LLM_PROVIDER=groq but GROQ_API_KEY is empty; "
-                "falling back to MockProvider."
-            )
-            return MockProvider()
+            raise ConfigurationError("Groq API key is required for provider 'groq'")
         return GroqProvider(
-            model_name=kwargs.get("model_name", "llama-3.3-70b-versatile"),
             api_key=api_key,
+            model_name=kwargs.get("model_name") or settings.llm_model_name,
         )
-    elif provider_name == "openai":
+
+    if provider_name == "openai":
+        api_key = kwargs.get("api_key") or settings.openai_api_key
+        if not api_key:
+            raise ConfigurationError("OpenAI API key is required for provider 'openai'")
         return OpenAIProvider(
-            model_name=kwargs.get("model_name", "gpt-4o-mini"),
-            api_key=kwargs.get("api_key", ""),
+            api_key=api_key,
+            model_name=kwargs.get("model_name") or settings.llm_model_name,
         )
-    else:
-        logger.warning(
-            "Unknown provider %r; falling back to mock", provider_name
-        )
-        return MockProvider()
+
+    raise ConfigurationError(f"Unknown LLM provider: {provider_name!r}")
 

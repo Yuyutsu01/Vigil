@@ -2,7 +2,7 @@
 from app.agents.state import ReviewGraphState
 from app.agents.policy import initialize_policy, check_policy
 from app.agents.graph import run_review_graph
-from app.agents.llm_provider import ModelProvider, MockProvider, get_provider
+from app.agents.llm_provider import ModelProvider, MockProvider, RulesOnlyProvider, get_provider
 from app.agents.patch_agent import PatchAgent, PatchDraft
 from app.agents.validation_agent import ValidationAgent, ValidationVerdict, CheckResult
 from app.agents.pr_review_agent import PRReviewAgent, PRReviewDraftOutput, DraftCommentOutput
@@ -26,6 +26,7 @@ __all__ = [
     "run_review_graph",
     "ModelProvider",
     "MockProvider",
+    "RulesOnlyProvider",
     "get_provider",
     "PatchAgent",
     "PatchDraft",
