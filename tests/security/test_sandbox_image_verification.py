@@ -50,3 +50,28 @@ def test_properly_signed_image_passes_verification():
     with patch("app.sandbox.gvisor.verify_cosign_signature", return_value=True):
         # Should not raise any error
         verify_sandbox_image(prod_settings)
+
+
+def test_cosign_missing_fails_closed_in_production():
+    """In production, missing cosign binary fails closed (returns False) and logs critical."""
+    from app.sandbox.gvisor import verify_cosign_signature
+    prod_settings = Settings(environment="production")
+    with patch("app.sandbox.gvisor.get_settings", return_value=prod_settings), \
+         patch("shutil.which", return_value=None), \
+         patch("app.sandbox.gvisor.logger.critical") as mock_critical:
+        result = verify_cosign_signature("vigil-sandbox", "sha256:" + "a" * 64)
+        assert result is False, f"Expected verify_cosign_signature to return False in production when cosign is missing, got {result}"
+        assert mock_critical.called, "Expected logger.critical to be called when cosign is missing in production"
+
+
+def test_cosign_missing_warns_and_allows_in_development():
+    """In development, missing cosign binary logs a warning and allows startup (returns True)."""
+    from app.sandbox.gvisor import verify_cosign_signature
+    dev_settings = Settings(environment="development")
+    with patch("app.sandbox.gvisor.get_settings", return_value=dev_settings), \
+         patch("shutil.which", return_value=None), \
+         patch("app.sandbox.gvisor.logger.warning") as mock_warning:
+        result = verify_cosign_signature("vigil-sandbox", "sha256:" + "a" * 64)
+        assert result is True, f"Expected verify_cosign_signature to return True in development when cosign is missing, got {result}"
+        assert mock_warning.called, "Expected logger.warning to be called when cosign is missing in development"
+

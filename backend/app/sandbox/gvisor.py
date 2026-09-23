@@ -113,7 +113,10 @@ def verify_cosign_signature(image_ref: str, digest: str) -> bool:
     """
     import shutil
     if not shutil.which("cosign"):
-        # If cosign binary is not installed on the system, proceed if digest is structurally valid
+        if get_settings().environment == "production":
+            logger.critical("cosign binary not found — refusing image verification in production")
+            return False
+        logger.warning("cosign binary not found — allowing unsigned image in non-production")
         return True
 
     try:
