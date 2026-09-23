@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = Field(
         default=60, alias="JWT_ACCESS_TOKEN_EXPIRE_MINUTES"
     )
+    # Gating flag for prototype local authentication routes (/register, /login, /token) [AUTH-01]
+    allow_local_auth: bool = Field(
+        default=False,
+        alias="VIGIL_ALLOW_LOCAL_AUTH",
+    )
 
     # ── Consent ───────────────────────────────────────────────────────────────
     # Current consent policy version. Consent records with an older version are rejected.

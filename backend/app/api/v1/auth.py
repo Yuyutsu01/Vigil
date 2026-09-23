@@ -104,6 +104,13 @@ async def login(
     Exchange email + password for a short-lived JWT access token.
     Production deployments MUST use an OIDC provider.
     """
+    settings = get_settings()
+    if not settings.allow_local_auth:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not Found",
+        )
+
     user = await authenticate_user(db, body.email, body.password)
     if not user:
         raise HTTPException(
@@ -146,6 +153,11 @@ async def register(
     default consent record, and immediate JWT issuance in a single atomic transaction.
     """
     settings = get_settings()
+    if not settings.allow_local_auth:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Not Found",
+        )
 
     # 1. Enforce sliding-window rate limit (IP + domain)
     await check_register_rate_limit(request, body.email)

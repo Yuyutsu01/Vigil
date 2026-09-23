@@ -54,6 +54,13 @@ async def lifespan(app: FastAPI):
     )
     logger.info("Active LLM provider: %s", provider.provider_name)
 
+    # Auth prototype gate warning [AUTH-01]
+    if settings.environment == "production" and settings.allow_local_auth:
+        logger.critical(
+            "SECURITY WARNING: Prototype local auth is enabled in production (VIGIL_ALLOW_LOCAL_AUTH=true). "
+            "Local password authentication should not be exposed in production deployments without OIDC."
+        )
+
     # Phase 4 Sandbox Security & Runtime Probes [H1, H5, H6, IC10]
     app.state.sandbox_available = False
     if settings.environment == "production":
