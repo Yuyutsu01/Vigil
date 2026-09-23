@@ -6,7 +6,6 @@ sqlalchemy[asyncio]==2.0.35
 asyncpg==0.29.0
 alembic==1.13.3
 redis[hiredis]==5.1.0
-python-jose[cryptography]==3.3.0
 argon2-cffi==23.1.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.12
@@ -28,7 +27,6 @@ jinja2==3.1.6
 weasyprint==70.0
 bandit==1.9.4
 ruff==0.6.9
-locust==2.46.6
 # Phase 3 (M3) GitHub Integration & Background Queue
 arq==0.26.1
 pyjwt[crypto]==2.9.0

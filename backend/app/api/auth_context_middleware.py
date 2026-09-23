@@ -8,7 +8,7 @@ from __future__ import annotations
 import uuid
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from jose import JWTError
+import jwt
 
 from app.services.auth_service import decode_access_token
 
@@ -31,6 +31,6 @@ class AuthContextMiddleware(BaseHTTPMiddleware):
                 payload = decode_access_token(token)
                 request.state.tenant_id = uuid.UUID(payload["tenant_id"])
                 request.state.user_id = uuid.UUID(payload["sub"])
-            except (JWTError, KeyError, ValueError):
+            except (jwt.PyJWTError, KeyError, ValueError):
                 pass
         return await call_next(request)

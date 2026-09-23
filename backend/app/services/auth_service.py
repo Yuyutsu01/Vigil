@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from jose import JWTError, jwt
+import jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -92,7 +92,7 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> dict:
-    """Decode and verify a JWT access token. Raises JWTError on invalid token."""
+    """Decode and verify a JWT access token. Raises PyJWTError on invalid token."""
     settings = get_settings()
     return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
 

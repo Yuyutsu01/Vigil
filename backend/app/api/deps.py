@@ -16,7 +16,7 @@ from typing import AsyncGenerator, Optional
 
 from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError
+import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import AsyncSessionLocal
@@ -64,7 +64,7 @@ async def get_auth_context(
     """
     try:
         payload = decode_access_token(credentials.credentials)
-    except JWTError as e:
+    except jwt.PyJWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "invalid_token", "message": str(e)},
