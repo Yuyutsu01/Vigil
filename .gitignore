@@ -21,6 +21,7 @@ coverage.xml
 *.db
 test_vigil.db
 *.log
+tests/perf/results/
 
 # Node / Next.js
 node_modules/
