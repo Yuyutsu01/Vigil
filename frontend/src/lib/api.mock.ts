@@ -98,6 +98,20 @@ export const mockApi = {
     return { run_id: 'rev-a1b2', status: 'queued' };
   },
 
+  async listReviews(params?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+  }): Promise<{ items: Review[]; total: number; limit: number; offset: number }> {
+    logMock('/v1/reviews', params);
+    return {
+      items: [],
+      total: 0,
+      limit: params?.limit ?? 20,
+      offset: params?.offset ?? 0,
+    };
+  },
+
   async getReview(runId: string): Promise<Review> {
     logMock(`/v1/reviews/${runId}`);
     return {

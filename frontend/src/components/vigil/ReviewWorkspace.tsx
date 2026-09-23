@@ -183,10 +183,12 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
             <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-mono border border-white/15">
               {review.language}
             </span>
-            <div className="flex items-center gap-1 text-[11px] text-white/60 bg-white/[0.04] px-2.5 py-0.5 rounded-full border border-white/10">
-              <Shield className="w-3 h-3 text-white/70" />
-              <span>{review.policyProfile}</span>
-            </div>
+            {review.policyProfile && (
+              <div className="flex items-center gap-1 text-[11px] text-white/60 bg-white/[0.04] px-2.5 py-0.5 rounded-full border border-white/10">
+                <Shield className="w-3 h-3 text-white/70" />
+                <span>{review.policyProfile}</span>
+              </div>
+            )}
             <div className="flex items-center gap-1 text-[11px] text-cyan-300 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-mono">
               <span>Scanned {scannedFilesCount} files with {findings.length} findings</span>
             </div>
@@ -206,9 +208,11 @@ export const ReviewWorkspace: React.FC<ReviewWorkspaceProps> = ({
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className="hidden lg:block">
-            <BudgetMeter budget={review.budget} compact />
-          </div>
+          {review.budget && (
+            <div className="hidden lg:block">
+              <BudgetMeter budget={review.budget} compact />
+            </div>
+          )}
           <div className="relative">
             <button
               onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}

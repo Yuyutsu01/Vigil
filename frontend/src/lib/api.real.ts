@@ -38,7 +38,6 @@ import {
   FindingSource,
   FindingStatus,
 } from './types';
-import { INITIAL_REVIEWS, INITIAL_FINDINGS } from '@/data/vigilData';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -254,24 +253,35 @@ export const realApi = {
     });
   },
 
+  async listReviews(params?: {
+    limit?: number;
+    offset?: number;
+    status?: string;
+  }): Promise<{ items: Review[]; total: number; limit: number; offset: number }> {
+    const query = new URLSearchParams();
+    if (params?.limit !== undefined) query.set('limit', String(params.limit));
+    if (params?.offset !== undefined) query.set('offset', String(params.offset));
+    if (params?.status) query.set('status', params.status);
+    const qs = query.toString() ? `?${query.toString()}` : '';
+
+    const raw = await apiFetch<{
+      items: any[];
+      total: number;
+      limit: number;
+      offset: number;
+    }>(`/v1/reviews${qs}`, { method: 'GET' });
+
+    return {
+      items: (raw.items || []).map(mapBackendReviewListItemToFrontend),
+      total: raw.total,
+      limit: raw.limit,
+      offset: raw.offset,
+    };
+  },
+
   async getReview(runId: string): Promise<Review> {
-    try {
-      const raw = await apiFetch<any>(`/v1/reviews/${runId}`, { method: 'GET' });
-      return mapBackendReviewToFrontend(raw);
-    } catch (err) {
-      // Fallback for sample/benchmark reviews (e.g. rev-a1b2, rev-7720b)
-      const sample = INITIAL_REVIEWS.find((r) => r.id === runId || r.runId === runId);
-      if (sample) {
-        const sampleFindings = INITIAL_FINDINGS.filter(
-          (f) => f.reviewId === sample.id || f.reviewId === sample.runId
-        );
-        return {
-          ...sample,
-          findings: sampleFindings,
-        };
-      }
-      throw err;
-    }
+    const raw = await apiFetch<any>(`/v1/reviews/${runId}`, { method: 'GET' });
+    return mapBackendReviewToFrontend(raw);
   },
 
   async deleteReview(runId: string, idempKey?: string): Promise<void> {
@@ -506,6 +516,41 @@ export const realApi = {
   },
 };
 
+export function mapBackendReviewListItemToFrontend(item: any): Review {
+  const lang = (item.language || 'python').toLowerCase();
+  const language = (['python', 'javascript', 'typescript'].includes(lang) ? lang : 'python') as
+    | 'python'
+    | 'javascript'
+    | 'typescript';
+
+  const severityCounts: Record<Severity, number> = {
+    critical: item.severity_counts?.critical ?? 0,
+    high: item.severity_counts?.high ?? 0,
+    medium: item.severity_counts?.medium ?? 0,
+    low: item.severity_counts?.low ?? 0,
+    info: item.severity_counts?.info ?? 0,
+  };
+
+  return {
+    id: item.run_id,
+    runId: item.run_id,
+    title: `${language.toUpperCase()} Security Review`,
+    language,
+    status: (item.status as any) || 'completed',
+    createdAt: item.started_at || undefined,
+    completedAt: item.completed_at || undefined,
+    fileCount: 1,
+    totalFindings: typeof item.finding_count === 'number' ? item.finding_count : 0,
+    severityCounts,
+    budget: undefined,
+    legalHold: item.legal_hold ?? false,
+    code: '',
+    fileName: language === 'python' ? 'src/app.py' : language === 'typescript' ? 'src/index.ts' : 'src/index.js',
+    policyProfile: undefined,
+    findings: undefined,
+  };
+}
+
 export function mapBackendReviewToFrontend(data: any): Review {
   const findings: Finding[] = (data.findings || []).map((f: any) => {
     const rawSev = (f.severity || 'medium').toLowerCase();
@@ -546,17 +591,19 @@ export function mapBackendReviewToFrontend(data: any): Review {
   });
 
   const severityCounts: Record<Severity, number> = {
-    critical: 0,
-    high: 0,
-    medium: 0,
-    low: 0,
-    info: 0,
+    critical: data.severity_counts?.critical ?? 0,
+    high: data.severity_counts?.high ?? 0,
+    medium: data.severity_counts?.medium ?? 0,
+    low: data.severity_counts?.low ?? 0,
+    info: data.severity_counts?.info ?? 0,
   };
-  findings.forEach((f) => {
-    if (severityCounts[f.severity] !== undefined) {
-      severityCounts[f.severity] += 1;
-    }
-  });
+  if (!data.severity_counts && findings.length > 0) {
+    findings.forEach((f) => {
+      if (severityCounts[f.severity] !== undefined) {
+        severityCounts[f.severity] += 1;
+      }
+    });
+  }
 
   const lang = (data.language || 'python').toLowerCase();
   const language = (['python', 'javascript', 'typescript'].includes(lang) ? lang : 'python') as
@@ -570,23 +617,16 @@ export function mapBackendReviewToFrontend(data: any): Review {
     title: `${language.toUpperCase()} Security Review`,
     language,
     status: (data.status as any) || 'completed',
-    createdAt: data.started_at || new Date().toISOString(),
+    createdAt: data.started_at || undefined,
     completedAt: data.completed_at || undefined,
     fileCount: 1,
     totalFindings: typeof data.finding_count === 'number' ? data.finding_count : findings.length,
     severityCounts,
-    budget: {
-      tokensUsed: 12400,
-      tokenLimit: 25000,
-      costUsed: 0.05,
-      costLimit: 5.0,
-      iterations: 1,
-      iterationLimit: 20,
-    },
+    budget: undefined,
     legalHold: false,
     code: data.source_text ?? '',
     fileName: language === 'python' ? 'src/app.py' : language === 'typescript' ? 'src/index.ts' : 'src/index.js',
-    policyProfile: 'Strict OWASP & CWE',
+    policyProfile: undefined,
     findings,
   };
 }

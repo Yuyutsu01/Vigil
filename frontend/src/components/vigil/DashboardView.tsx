@@ -63,7 +63,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       r.title.toLowerCase().includes(q) ||
       r.fileName.toLowerCase().includes(q) ||
       r.language.toLowerCase().includes(q) ||
-      r.policyProfile.toLowerCase().includes(q)
+      (r.policyProfile ? r.policyProfile.toLowerCase().includes(q) : false)
     );
   });
 
@@ -170,7 +170,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 4 */}
         <div className="p-4 rounded-xl border border-white/10 bg-white/[0.03] flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-white/50">
-            <span>Token Budget Spent</span>
+            <span>Tenant spend (all time)</span>
             <Coins className="w-4 h-4 text-white/60" />
           </div>
           <div className="text-2xl font-bold font-mono text-white mt-2">
@@ -254,11 +254,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-white/60 font-sans">{rev.policyProfile}</td>
+                  <td className="py-3 px-4 text-white/60 font-sans">{rev.policyProfile || '—'}</td>
                   <td className="py-3 px-4">
-                    <span className="inline-flex items-center gap-1 text-[11px] text-white/60 bg-white/8 px-2 py-0.5 rounded-full border border-white/18">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-white/60 bg-white/8 px-2 py-0.5 rounded-full border border-white/18 capitalize">
                       <Clock className="w-3 h-3" />
-                      <span>Completed</span>
+                      <span>{rev.status || 'completed'}</span>
                     </span>
                   </td>
                   <td className="py-3 px-4 text-right">

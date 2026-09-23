@@ -125,19 +125,19 @@ export interface Review {
   title: string;
   language: 'python' | 'javascript' | 'typescript';
   status: ReviewStatus;
-  createdAt: string;
+  createdAt?: string;
   completedAt?: string;
   fileCount: number;
   totalFindings: number;
   severityCounts: Record<Severity, number>;
-  budget: BudgetStats;
+  budget?: BudgetStats;
   deadlineAt?: string;
   legalHold: boolean;
   code: string;
   fileName: string;
   repoFullName?: string;
   refValue?: string;
-  policyProfile: 'Default Policy' | 'Strict OWASP & CWE' | 'Custom Enterprise Guard';
+  policyProfile?: 'Default Policy' | 'Strict OWASP & CWE' | 'Custom Enterprise Guard' | string;
   findings?: Finding[];
 }
 

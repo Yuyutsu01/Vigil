@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/vigil/Sidebar';
 import { Topbar } from '@/components/vigil/Topbar';
 import { useAuth } from '@/context/AuthContext';
 import { VigilNavSection } from '@/lib/types';
-import { MOCK_REVIEWS } from '@/data/vigilData';
+import { api } from '@/lib/api';
 import { useModalA11y } from '@/lib/useFocusTrap';
 
 export default function DashboardLayout({
@@ -17,7 +17,22 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  const [reviewCount] = useState(MOCK_REVIEWS.length);
+  const [reviewCount, setReviewCount] = useState<number>(0);
+
+  useEffect(() => {
+    let mounted = true;
+    api.listReviews({ limit: 1 })
+      .then((res) => {
+        if (mounted) setReviewCount(res.total);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch sidebar review count:', err);
+        if (mounted) setReviewCount(0);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [pathname]);
 
   // Sidebar collapse state with localStorage persistence
   const [collapsed, setCollapsed] = useState<boolean>(false);
