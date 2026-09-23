@@ -555,6 +555,28 @@ Dashboard statistics are dynamically computed in real time via `GET /v1/tenants/
   - When landing on `/dashboard/github?connected=1`, the component immediately refreshes the repository list and invokes `window.history.replaceState({}, '', '/dashboard/github')` to clean the URL query parameter.
   - Interactive actions include Trigger Review with cost pre-flight budget check, Disconnect with confirmation, and Connect GitHub buttons in header and empty states with WCAG 2.1 AA compliant keyboard focus and ARIA labels.
 
+---
+
+## Audit remediation (2026-09)
+
+[AUTH-01] Prototype local auth routes (/v1/auth/register, /login, /token)
+are gated behind VIGIL_ALLOW_LOCAL_AUTH (default false). Production
+startup logs a critical warning if the gate is enabled. OIDC exchange is
+not yet implemented.
+
+[SEC-01] LLM provider factory is fail-closed. get_provider() raises
+ConfigurationError if a real provider is named but its API key is missing.
+VIGIL_LLM_PROVIDER=rules_only is the explicit opt-in for deterministic
+rules-only operation. MockProvider is forbidden in production.
+
+[SEC-02] Cosign signature verification fails closed in production when the
+cosign binary is absent. In development it logs a warning and proceeds.
+
+[UPLOAD-01] Source size limit is unified at 256 KB (262144 bytes) across
+the Pydantic validator, the schema constraints response, and the upload
+handler error message. All read from settings.max_upload_bytes.
+
+
 
 
 
