@@ -66,15 +66,21 @@ async def get_tenant_stats(
 
     # 1. Total reviews count
     review_count_query = select(func.count(ReviewRun.run_id)).where(
-        ReviewRun.tenant_id == tenant_id
+        ReviewRun.tenant_id == tenant_id,
+        ReviewRun.status != ReviewStatus.deleted,
     )
     total_reviews_res = await db.execute(review_count_query)
     total_reviews = total_reviews_res.scalar() or 0
 
-    # 2. Findings aggregated by severity
+    # 2. Findings aggregated by severity (excluding findings from soft-deleted reviews)
     findings_query = (
         select(Finding.severity, func.count(Finding.finding_id))
-        .where(Finding.tenant_id == tenant_id)
+        .join(ReviewRun, Finding.run_id == ReviewRun.run_id)
+        .where(
+            Finding.tenant_id == tenant_id,
+            ReviewRun.tenant_id == tenant_id,
+            ReviewRun.status != ReviewStatus.deleted,
+        )
         .group_by(Finding.severity)
     )
     findings_res = await db.execute(findings_query)
@@ -93,6 +99,9 @@ async def get_tenant_stats(
         total_findings += count
 
     # 3. Total tokens used and estimated cost
+    # Unfiltered by design: includes soft-deleted reviews' spend.
+    # NOTE: AgentCoordinationRun has ondelete=CASCADE on review_run_id; a
+    # future hard-delete of ReviewRun rows would silently reduce this number.
     token_query = select(
         func.coalesce(func.sum(AgentCoordinationRun.total_tokens_consumed), 0)
     ).where(AgentCoordinationRun.tenant_id == tenant_id)
@@ -105,6 +114,7 @@ async def get_tenant_stats(
     # 4. Average review duration (ms)
     runs_query = select(ReviewRun.started_at, ReviewRun.completed_at).where(
         ReviewRun.tenant_id == tenant_id,
+        ReviewRun.status != ReviewStatus.deleted,
         ReviewRun.started_at.is_not(None),
         ReviewRun.completed_at.is_not(None),
     )
@@ -123,6 +133,7 @@ async def get_tenant_stats(
 
     last_7_query = select(func.count(ReviewRun.run_id)).where(
         ReviewRun.tenant_id == tenant_id,
+        ReviewRun.status != ReviewStatus.deleted,
         ReviewRun.started_at >= seven_days_ago,
     )
     last_7_res = await db.execute(last_7_query)
@@ -130,6 +141,7 @@ async def get_tenant_stats(
 
     prev_7_query = select(func.count(ReviewRun.run_id)).where(
         ReviewRun.tenant_id == tenant_id,
+        ReviewRun.status != ReviewStatus.deleted,
         ReviewRun.started_at >= fourteen_days_ago,
         ReviewRun.started_at < seven_days_ago,
     )

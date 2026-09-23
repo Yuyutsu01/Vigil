@@ -150,7 +150,7 @@ class TestReviewAPIFlow:
     def test_source_size_limit_enforced(self, app, valid_token) -> None:
         """POST /v1/reviews with oversized payload → 422."""
         from fastapi.testclient import TestClient
-        large = "x = 1\n" * (250 * 1024 // 6 + 1)  # >250KB
+        large = "x = 1\n" * (256 * 1024 // 6 + 10)  # >256KB
         with TestClient(app) as client:
             resp = client.post(
                 "/v1/reviews",

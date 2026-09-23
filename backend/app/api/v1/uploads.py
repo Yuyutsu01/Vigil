@@ -74,13 +74,14 @@ async def upload_file(
     # Read content
     content = await file.read()
 
-    # Size check (250 KB)
+    # Size check
     if len(content) > settings.max_upload_bytes:
+        limit_kb = settings.max_upload_bytes // 1024
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail={
                 "code": "payload_too_large",
-                "message": f"File size {len(content)} bytes exceeds 250 KB limit",
+                "message": f"File size {len(content)} bytes exceeds {limit_kb} KB limit ({settings.max_upload_bytes} bytes)",
             },
         )
 
